@@ -6,19 +6,19 @@ Developed by **Abhidatta Benda**.
 
 ## ✨ Key Features
 
-- **Extreme Minimalism:** No grid, no clutter. A single floating search bar that activates only when you're ready.
-- **Fish-Shell Style Auto-fill:** Instant ghost-text hints as you type, prioritizing your own bookmarks.
+- **Minimalism:** No grid, no clutter. A single floating search bar that activates only when you're ready.
+- **Auto-fill:** Instant ghost-text hints as you type, prioritizing your own bookmarks.
 - **Keyboard Native Workflow:**
   - `Tab` or `→`: Accept and complete the ghost-text hint.
   - `↑` / `↓`: Navigate through your command and search history.
   - `Space` / `Enter`: Activate the dormant bar.
   - `Escape`: Deactivate and lock the bar.
-- **Built-in Tab Management:**
+- **Tab Management:**
   - `t` (Dormant State): Open a new SenzaI tab instantly.
   - `x` (Dormant State): Close the current tab.
-- **Premium Themes:** Professionally curated palettes including **Dracula**, **Kanagawa**, and the full **Catppuccin** series (Frappé, Macchiato, Mocha).
-- **Custom Typography:** Support for any Google Font or local font family (defaulting to **JetBrains Mono**).
-- **Geometric Customization:** Adjustable bar rounding (from sharp corners to full pill shape).
+- **Themes:** Professionally curated palettes including **Dracula**, **Kanagawa**, and the full **Catppuccin** series (Frappé, Macchiato, Mocha).
+- **Typography:** Support for any Google Font or local font family (defaulting to **JetBrains Mono**).
+- **Customization:** Adjustable bar rounding (from sharp corners to full pill shape).
 - **Sync & Backup:** Full JSON export/import support for seamless setup migration across browsers.
 
 ## 🛠 Usage & Commands
