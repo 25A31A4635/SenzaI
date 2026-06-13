@@ -1,0 +1,100 @@
+/**
+ * SenzaI - Storage Logic
+ * Author: Abhidatta Benda
+ * 
+ * Handles reading and writing user preferences to localStorage.
+ */
+
+/* --- Default Configurations --- */
+
+const DEFAULT_BOOKMARKS = [
+  { href: "https://github.com", title: "GitHub" },
+  { href: "https://youtube.com", title: "YouTube" },
+  { href: "https://google.com", title: "Google" },
+  { href: "https://reddit.com", title: "Reddit" },
+  { href: "https://twitter.com", title: "Twitter" }
+];
+
+const DEFAULT_USERNAME = "Abhidatta Benda";
+const DEFAULT_SEARCH_ENGINE = "google";
+const DEFAULT_FONT_FAMILY = "";
+const DEFAULT_FONT_URL = "";
+const DEFAULT_KEY_CLOSE_TAB = "x";
+const DEFAULT_KEY_NEW_TAB = "t";
+const DEFAULT_BAR_ROUNDING = "32";
+
+const DEFAULT_SYNTAX_COLORS = {
+  cmd:     '#667eea',
+  theme:   '#f6ad55',
+  search:  '#f39c12',
+  version: '#00b894',
+  url:     '#5fafaf',
+  unknown: '#e74c3c',
+};
+
+/* --- Core Accessors --- */
+
+/**
+ * Returns the array of quicklinks. Automatically migrates old "shelf" links if found.
+ */
+function getStoredBookmarks() {
+  try {
+    const upfront = JSON.parse(localStorage.getItem('bookmarks')) || DEFAULT_BOOKMARKS;
+    const shelf = JSON.parse(localStorage.getItem('shelfBookmarks')) || [];
+    // Consolidate into one list if shelf exists
+    if (shelf.length > 0) {
+      const all = [...upfront, ...shelf];
+      localStorage.setItem('bookmarks', JSON.stringify(all));
+      localStorage.removeItem('shelfBookmarks');
+      return all;
+    }
+    return upfront;
+  } catch { return DEFAULT_BOOKMARKS; }
+}
+function saveBookmarks(b) { localStorage.setItem('bookmarks', JSON.stringify(b)); }
+
+// Deprecated: legacy support for the old two-tier system
+function getStoredShelfBookmarks() { return []; }
+function saveShelfBookmarks(b) {}
+
+function getStoredUsername() { return localStorage.getItem('username') || DEFAULT_USERNAME; }
+function saveUsername(u) { localStorage.setItem('username', u); }
+
+function getStoredTheme() { return localStorage.getItem('theme') || 'dark'; }
+function saveTheme(t) { localStorage.setItem('theme', t); }
+
+function getStoredSearchEngine() { return localStorage.getItem('searchEngine') || DEFAULT_SEARCH_ENGINE; }
+function saveSearchEngine(e) { localStorage.setItem('searchEngine', e); }
+
+function getStoredFontFamily() { return localStorage.getItem('fontFamily') || DEFAULT_FONT_FAMILY; }
+function saveFontFamily(f) { localStorage.setItem('fontFamily', f); }
+
+function getStoredFontUrl() { return localStorage.getItem('fontUrl') || DEFAULT_FONT_URL; }
+function saveFontUrl(u) { localStorage.setItem('fontUrl', u); }
+
+function getStoredKeyCloseTab() { return localStorage.getItem('keyCloseTab') || DEFAULT_KEY_CLOSE_TAB; }
+function saveKeyCloseTab(k) { localStorage.setItem('keyCloseTab', k); }
+
+function getStoredKeyNewTab() { return localStorage.getItem('keyNewTab') || DEFAULT_KEY_NEW_TAB; }
+function saveKeyNewTab(k) { localStorage.setItem('keyNewTab', k); }
+
+function getStoredBarRounding() { return localStorage.getItem('barRounding') || DEFAULT_BAR_ROUNDING; }
+function saveBarRounding(r) { localStorage.setItem('barRounding', r); }
+
+/**
+ * Returns the object containing syntax highlighting hex codes.
+ */
+function getStoredSyntaxColors() {
+  try { return { ...DEFAULT_SYNTAX_COLORS, ...JSON.parse(localStorage.getItem('syntaxColors')) }; } catch { return DEFAULT_SYNTAX_COLORS; }
+}
+function saveSyntaxColors(c) { localStorage.setItem('syntaxColors', JSON.stringify(c)); }
+
+/**
+ * Injects syntax colors into CSS variables on the root element.
+ */
+function applySyntaxColors(colors) {
+  const root = document.documentElement;
+  for (const [k, v] of Object.entries(colors)) {
+    root.style.setProperty(`--syn-${k}`, v);
+  }
+}
