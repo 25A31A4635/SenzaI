@@ -157,6 +157,7 @@ function renderLiveResults(rawValue) {
 
   if (typeof getStoredEnableSuggestionDropdown === 'function' && !getStoredEnableSuggestionDropdown()) {
     container.classList.remove('visible');
+    container.style.height = '0px';
     return;
   }
 
@@ -164,6 +165,7 @@ function renderLiveResults(rawValue) {
 
   if (filtered.length === 0) {
     container.classList.remove('visible');
+    container.style.height = '0px';
     return;
   }
 
@@ -178,5 +180,11 @@ function renderLiveResults(rawValue) {
       </a>
     `;
   }).join('');
+  
   container.classList.add('visible');
+
+  // Trigger smooth height shift
+  requestAnimationFrame(() => {
+    container.style.height = `${container.scrollHeight}px`;
+  });
 }
