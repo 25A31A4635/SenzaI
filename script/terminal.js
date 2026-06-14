@@ -125,7 +125,7 @@ function handleKeyboardEvents(input) {
     const enableNav = (typeof getStoredEnableDropdownNavigation === 'function') ? getStoredEnableDropdownNavigation() : true;
     const resultsContainer = document.getElementById('live-results');
     const items = resultsContainer ? resultsContainer.querySelectorAll('.live-result-item') : [];
-    const hasResults = resultsContainer && resultsContainer.style.display !== 'none' && items.length > 0;
+    const hasResults = resultsContainer && resultsContainer.classList.contains('visible') && items.length > 0;
 
     // --- Autocomplete Completion (Tab or Right Arrow) ---
     if ((e.key === "Tab" || e.key === "ArrowRight") && input.hasAttribute('data-suggestion')) {

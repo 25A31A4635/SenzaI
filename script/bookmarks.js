@@ -156,20 +156,17 @@ function renderLiveResults(rawValue) {
   if (!container) return;
 
   if (typeof getStoredEnableSuggestionDropdown === 'function' && !getStoredEnableSuggestionDropdown()) {
-    container.innerHTML = '';
-    container.style.display = 'none';
+    container.classList.remove('visible');
     return;
   }
 
   const filtered = getFilteredBookmarks(rawValue).slice(0, 5);
 
   if (filtered.length === 0) {
-    container.innerHTML = '';
-    container.style.display = 'none';
+    container.classList.remove('visible');
     return;
   }
 
-  container.style.display = 'flex';
   container.innerHTML = filtered.map(bm => {
     let domain = '';
     try { domain = new URL(bm.href).hostname; } catch {}
@@ -181,4 +178,5 @@ function renderLiveResults(rawValue) {
       </a>
     `;
   }).join('');
+  container.classList.add('visible');
 }
