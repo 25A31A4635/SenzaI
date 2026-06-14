@@ -872,12 +872,14 @@ button:hover {
   margin-right: 14px;
   opacity: 0.9;
   flex-shrink: 0;
+  line-height: 1;
 }
 
 .live-result-item .result-title {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .live-result-item .result-domain {
@@ -889,6 +891,9 @@ button:hover {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  line-height: 1.2;
+  /* Nudge monospace baseline to align visually with Inter font */
+  transform: translateY(1px);
 }
 
 /* Hidden elements */
