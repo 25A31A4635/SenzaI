@@ -7,7 +7,14 @@
   --terminal-bg: rgba(255, 255, 255, 0.8);
   --terminal-text: #212529;
   --shadow-color: rgba(0, 0, 0, 0.1);
-  --border-radius: 12px;
+  --radius-xs: 6px;
+  --radius-sm: 10px;
+  --radius-md: 12px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-xxl: 24px;
+  --radius-full: 50%;
+  --border-radius: var(--radius-md);
   --font-family: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --monospace-font-family: "JetBrains Mono", "Source Code Pro", ui-monospace, "Cascadia Code", monospace;
   --link-background: rgba(0, 0, 0, 0.05);
@@ -38,6 +45,8 @@
   --syn-version: #00b894;
   --syn-url:     #5fafaf;
   --syn-unknown: #e74c3c;
+  --wallpaper-image: none;
+  --wallpaper-overlay-opacity: 0.1;
 }
 
 /* CSS Reset / Normalize */
@@ -219,6 +228,26 @@ body {
   position: relative;
   transition: background 0.3s ease, color 0.3s ease;
 }
+
+body.has-wallpaper {
+  background-color: var(--background-color);
+  background-image:
+    linear-gradient(rgba(0, 0, 0, var(--wallpaper-overlay-opacity)), rgba(0, 0, 0, var(--wallpaper-overlay-opacity))),
+    var(--wallpaper-image);
+  background-position: center;
+  background-size: cover;
+  background-attachment: fixed;
+}
+
+html.light-mode body.has-wallpaper {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, var(--wallpaper-overlay-opacity)), rgba(255, 255, 255, var(--wallpaper-overlay-opacity))),
+    var(--wallpaper-image);
+}
+
+body.has-wallpaper .terminal-section {
+  backdrop-filter: blur(18px);
+}
 /* Loading Overlay - Snappy & Smooth */
 #loading-overlay {
   position: fixed;
@@ -245,7 +274,7 @@ body {
   height: 40px;
   border: 3px solid rgba(128, 128, 128, 0.1);
   border-top-color: var(--color-primary);
-  border-radius: 50%;
+  border-radius: var(--radius-full);
   animation: spin 0.6s linear infinite;
 }
 
@@ -375,7 +404,7 @@ body.navigating .content {
 .config-content {
   background: var(--background-color);
   border: 1px solid var(--card-border);
-  border-radius: 20px;
+  border-radius: var(--radius-xl);
   padding: 32px;
   max-width: 500px;
   width: 90%;
@@ -410,21 +439,49 @@ body.navigating .content {
   opacity: 0.5;
 }
 
+.config-hint {
+  margin-top: 8px;
+  font-size: 12px;
+  opacity: 0.55;
+}
+
 .config-content input, .config-content select, .config-content textarea {
   width: 100%;
   background: rgba(128, 128, 128, 0.05);
   border: 1px solid var(--card-border);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   padding: 14px;
   color: var(--text-color);
   font-size: 15px;
   transition: all 0.2s ease;
 }
 
+.config-content input[type="checkbox"] {
+  width: auto;
+  height: auto;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+}
+
+.config-content select {
+  appearance: none;
+  min-height: 48px;
+  padding-right: 44px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--text-color) 50%),
+    linear-gradient(135deg, var(--text-color) 50%, transparent 50%);
+  background-position:
+    calc(100% - 22px) 50%,
+    calc(100% - 16px) 50%;
+  background-size: 6px 6px, 6px 6px;
+  background-repeat: no-repeat;
+}
+
 .config-content input:focus, .config-content select:focus {
   outline: none;
   border-color: var(--color-primary);
-  background: rgba(128, 128, 128, 0.1);
+  background-color: rgba(128, 128, 128, 0.1);
 }
 
 .config-buttons {
@@ -436,7 +493,7 @@ body.navigating .content {
 
 button {
   padding: 12px 24px;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   border: none;
   cursor: pointer;
   font-weight: 600;
@@ -460,6 +517,128 @@ button:hover {
   color: var(--text-color);
 }
 
+.wallpaper-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+#config-wallpaper-files {
+  display: none;
+}
+
+.wallpaper-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-width: 150px;
+  min-height: 44px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  background: rgba(128, 128, 128, 0.05);
+  color: var(--text-color);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.wallpaper-upload:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+}
+
+#btn-clear-wallpapers {
+  min-height: 44px;
+}
+
+#btn-next-wallpaper,
+#btn-clear-wallpapers {
+  flex: 0 0 auto;
+}
+
+.wallpaper-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+  max-height: 260px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.wallpaper-gallery.empty {
+  display: none;
+}
+
+.wallpaper-tile {
+  position: relative;
+  min-width: 0;
+}
+
+.wallpaper-preview {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: rgba(128, 128, 128, 0.05);
+  color: white;
+  position: relative;
+}
+
+.wallpaper-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.wallpaper-preview::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.62), transparent 58%);
+  pointer-events: none;
+}
+
+.wallpaper-tile.active .wallpaper-preview {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.wallpaper-name {
+  position: absolute;
+  right: 8px;
+  bottom: 7px;
+  left: 8px;
+  z-index: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.wallpaper-remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.58);
+  color: white;
+  font-size: 13px;
+  line-height: 1;
+}
+
 /* Appearance Panel Specifics */
 .customize-theme-grid {
   display: grid;
@@ -470,7 +649,7 @@ button:hover {
 .customize-theme-btn {
   padding: 12px;
   border: 1px solid var(--card-border);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   background: rgba(128, 128, 128, 0.05);
   font-size: 13px;
   text-align: center;
@@ -495,7 +674,7 @@ button:hover {
   gap: 12px;
   padding: 10px 14px;
   background: rgba(128, 128, 128, 0.03);
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
 }
 
 /* Bookmarks Panel Specifics */
@@ -514,7 +693,7 @@ button:hover {
   gap: 10px;
   background: rgba(128, 128, 128, 0.03);
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--radius-sm);
   align-items: center;
 }
 
@@ -535,6 +714,34 @@ button:hover {
   justify-content: center;
 }
 
+/* History Panel */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 45vh;
+  overflow-y: auto;
+}
+
+.history-item {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-sm);
+  background: rgba(128, 128, 128, 0.05);
+  color: var(--text-color);
+  font-family: var(--monospace-font-family);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.history-empty {
+  opacity: 0.55;
+  font-family: var(--monospace-font-family);
+  font-size: 14px;
+}
+
 /* Toast */
 .sp-toast {
   position: fixed;
@@ -545,7 +752,7 @@ button:hover {
   backdrop-filter: blur(10px);
   border: 1px solid var(--card-border);
   padding: 14px 28px;
-  border-radius: 24px;
+  border-radius: var(--radius-xxl);
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
   z-index: 2000;
   font-weight: 600;
@@ -558,7 +765,187 @@ button:hover {
   transform: translateX(-50%) translateY(0);
 }
 
+/* Status Line Clock / Greeting styling */
+#status-line {
+  font-family: var(--font-family);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-color);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-4px);
+  transition: opacity 0.3s ease, transform 0.3s ease, visibility 0.3s;
+  margin-top: 4px;
+  text-align: center;
+  user-select: none;
+}
+
+#status-line.visible {
+  opacity: 0.55;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* Live Results Dropdown styling */
+#live-results {
+  width: 100%;
+  max-width: 600px;
+  background: var(--terminal-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-xl);
+  box-shadow: 0 15px 45px var(--shadow-color);
+  padding: 8px;
+  display: none;
+  flex-direction: column;
+  gap: 4px;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  z-index: 99;
+  animation: contentReveal 0.3s cubic-bezier(0.2, 1, 0.3, 1);
+}
+
+.live-result-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 18px;
+  border-radius: var(--radius-lg);
+  text-decoration: none;
+  color: var(--text-color);
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+}
+
+.live-result-item:hover, .live-result-item.selected {
+  background: var(--link-hover);
+  transform: translateX(2px);
+}
+
+.live-result-item:active {
+  transform: scale(0.99);
+}
+
+.live-result-item .result-type {
+  font-family: var(--monospace-font-family);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: var(--color-primary);
+  color: white;
+  padding: 3px 8px;
+  border-radius: var(--radius-xs);
+  margin-right: 14px;
+  opacity: 0.9;
+  flex-shrink: 0;
+}
+
+.live-result-item .result-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.live-result-item .result-domain {
+  margin-left: auto;
+  font-family: var(--monospace-font-family);
+  font-size: 12px;
+  opacity: 0.5;
+  padding-left: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Hidden elements */
 .hidden { display: none !important; }
 ::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb { background: rgba(128, 128, 128, 0.2); border-radius: var(--radius-sm); }
+
+/* Custom Styled Select Dropdown Menu Components */
+.custom-select-container {
+  position: relative;
+  width: 100%;
+  user-select: none;
+  margin-bottom: 0px;
+}
+
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: rgba(128, 128, 128, 0.05);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 14px;
+  color: var(--text-color);
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 48px;
+}
+
+.custom-select-trigger:hover {
+  background: rgba(128, 128, 128, 0.1);
+  border-color: var(--color-primary);
+}
+
+.custom-select-container.open .custom-select-trigger {
+  border-color: var(--color-primary);
+  background: rgba(128, 128, 128, 0.1);
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.custom-select-arrow {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 5px solid var(--text-color);
+  transition: transform 0.2s ease;
+}
+
+.custom-select-container.open .custom-select-arrow {
+  transform: rotate(180deg);
+}
+
+.custom-select-options {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--background-color);
+  border: 1px solid var(--card-border);
+  border-top: none;
+  border-bottom-left-radius: var(--radius-md);
+  border-bottom-right-radius: var(--radius-md);
+  z-index: 100;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.custom-select-container.open .custom-select-options {
+  display: block;
+}
+
+.custom-select-option {
+  padding: 12px 14px;
+  color: var(--text-color);
+  font-size: 15px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.custom-select-option:hover {
+  background: var(--link-hover);
+}
+
+.custom-select-option.selected {
+  background: rgba(102, 126, 234, 0.15);
+  color: var(--color-primary);
+  font-weight: 600;
+}

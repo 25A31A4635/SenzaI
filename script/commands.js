@@ -61,7 +61,7 @@ function handleSpecialCommands(rawValue) {
     return;
   }
 
-  // --- 4. Built-in Search Prefixes ---
+  // --- 4. Built-in & Custom Search Prefixes ---
   const searchPrefixes = {
     'yt:': 'https://www.youtube.com/results?search_query=',
     'r:': 'https://google.com/search?q=site:reddit.com ',
@@ -69,6 +69,16 @@ function handleSpecialCommands(rawValue) {
     'gh:': 'https://github.com/search?q=',
     'ma:': 'https://www.google.com/maps/search/'
   };
+
+  if (typeof getStoredCustomSearchEngines === 'function') {
+    const customList = getStoredCustomSearchEngines();
+    customList.forEach(item => {
+      if (item.prefix && item.url) {
+        const pfx = item.prefix.endsWith(':') ? item.prefix.toLowerCase() : `${item.prefix.toLowerCase()}:`;
+        searchPrefixes[pfx] = item.url;
+      }
+    });
+  }
 
   for (const [prefix, url] of Object.entries(searchPrefixes)) {
     if (normalized.startsWith(prefix)) {
@@ -121,10 +131,8 @@ function applyTheme(theme) {
     document.body.classList.remove(`${t}-mode`);
     document.documentElement.classList.remove(`${t}-mode`);
   });
-  if (theme !== 'light') {
-    document.documentElement.classList.add(`${theme}-mode`);
-    document.body.classList.add(`${theme}-mode`);
-  }
+  document.documentElement.classList.add(`${theme}-mode`);
+  document.body.classList.add(`${theme}-mode`);
 }
 
 /**

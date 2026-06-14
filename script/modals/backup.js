@@ -2,7 +2,29 @@
   SenzaI Backup — Export / Import Configuration
 */
 
-const BACKUP_KEYS = ['username', 'theme', 'searchEngine', 'bookmarks', 'syntaxColors'];
+const BACKUP_KEYS = [
+  'username',
+  'theme',
+  'searchEngine',
+  'bookmarks',
+  'syntaxColors',
+  'fontFamily',
+  'fontUrl',
+  'keyCloseTab',
+  'keyNewTab',
+  'barRounding',
+  'wallpaperBrightness',
+  'enableAutocompleteHint',
+  'enableSuggestionDropdown',
+  'enableDropdownNavigation',
+  'enableStatusLine',
+  'enableInlineCalculator',
+  'customSearchEngines',
+  'wallpapers',
+  'wallpaperSchedule',
+  'wallpaperIndex',
+  'wallpaperCycleBucket'
+];
 
 function exportBackup() {
   const data = { 
@@ -12,10 +34,15 @@ function exportBackup() {
   };
 
   BACKUP_KEYS.forEach(key => {
-    const val = localStorage.getItem(key);
+    let val = null;
+    if (key === 'wallpapers' && typeof getStoredWallpapers === 'function') {
+      val = JSON.stringify(getStoredWallpapers());
+    } else {
+      val = localStorage.getItem(key);
+    }
+
     if (val !== null) {
       try {
-        // Try to store as actual JSON if it is a stringified object
         data[key] = JSON.parse(val);
       } catch {
         data[key] = val;
@@ -60,15 +87,26 @@ function importBackup() {
 
         if (!confirmed) return;
 
+        const extData = {};
         BACKUP_KEYS.forEach(key => {
           if (data[key] !== undefined) {
             const val = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
             localStorage.setItem(key, val);
+            if (key === 'wallpapers') {
+              extData[key] = data[key];
+            }
           }
         });
 
-        showToast('Restoring setup...', 'info');
-        setTimeout(() => location.reload(), 1000);
+        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+          chrome.storage.local.set(extData, () => {
+            showToast('Restoring setup...', 'info');
+            setTimeout(() => location.reload(), 1000);
+          });
+        } else {
+          showToast('Restoring setup...', 'info');
+          setTimeout(() => location.reload(), 1000);
+        }
 
       } catch (err) {
         showAlert('Invalid SenzaI backup file.', { title: 'Import Failed' });

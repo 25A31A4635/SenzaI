@@ -2,6 +2,30 @@
 <html lang="en">
 
 <head>
+  <script>
+    (function() {
+      try {
+        const theme = localStorage.getItem('theme') || 'dark';
+        const backgroundByTheme = {
+          light:                '#ffffff',
+          dark:                 '#2d3436',
+          black:                '#000000',
+          nord:                 '#2e3440',
+          gruvbox:              '#282828',
+          'tokyo-night':        '#1a1b26',
+          dracula:              '#282a36',
+          kanagawa:             '#1f1f28',
+          'catppuccin-frappe':    '#303446',
+          'catppuccin-macchiato': '#24273a',
+          'catppuccin-mocha':     '#1e1e2e'
+        };
+        const darkThemes = new Set(['dark', 'black', 'nord', 'gruvbox', 'tokyo-night', 'dracula', 'kanagawa', 'catppuccin-frappe', 'catppuccin-macchiato', 'catppuccin-mocha']);
+        document.documentElement.style.backgroundColor = backgroundByTheme[theme] || '#2d3436';
+        document.documentElement.style.colorScheme = darkThemes.has(theme) ? 'dark' : 'light';
+        document.documentElement.classList.add(theme + '-mode');
+      } catch (e) {}
+    })();
+  </script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width" />
   <meta name="description" content="The ultimate minimalist quicklink launcher by Abhidatta Benda." />
@@ -32,8 +56,8 @@
         <input id="terminal-input" type="text" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" aria-label="Search" />
       </div>
     </section>
-    <!-- Hidden container for search logic compatibility -->
-    <div id="live-results" style="display:none"></div>
+    <div id="status-line"></div>
+    <div id="live-results"></div>
   </div>
 
   <!-- Config Modal -->
@@ -69,6 +93,30 @@
       </div>
 
       <div class="config-section">
+        <h3>Preferences</h3>
+        <label class="config-checkbox-label" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; font-size: 14px; user-select: none;">
+          <input type="checkbox" id="config-enable-hint" />
+          <span>Enable inline autocompletion hint (ghost text)</span>
+        </label>
+        <label class="config-checkbox-label" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; font-size: 14px; user-select: none;">
+          <input type="checkbox" id="config-enable-dropdown" />
+          <span>Enable suggestion dropdown (live results)</span>
+        </label>
+        <label class="config-checkbox-label" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; font-size: 14px; user-select: none;">
+          <input type="checkbox" id="config-enable-dropdown-nav" />
+          <span>Enable Alt+j / Alt+k dropdown navigation</span>
+        </label>
+        <label class="config-checkbox-label" style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; cursor: pointer; font-size: 14px; user-select: none;">
+          <input type="checkbox" id="config-enable-status-line" />
+          <span>Enable clock greeting status line</span>
+        </label>
+        <label class="config-checkbox-label" style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; user-select: none;">
+          <input type="checkbox" id="config-enable-calculator" />
+          <span>Enable inline math evaluation</span>
+        </label>
+      </div>
+
+      <div class="config-section">
         <h3>Custom Keybinds</h3>
         <div style="display: flex; gap: 8px; margin-bottom: 8px;">
           <div style="flex: 1;">
@@ -84,6 +132,7 @@
       </div>
       <div class="config-section">
         <button id="btn-edit-bookmarks" style="width: 100%; background: var(--color-primary); color: white; margin-bottom: 8px;">Edit Quicklinks</button>
+        <button id="btn-edit-searchengines" style="width: 100%; background: var(--color-primary); color: white; margin-bottom: 8px;">Edit Search Engines</button>
         <button id="btn-customize-from-config" style="width: 100%; background: rgba(128, 128, 128, 0.05); color: var(--text-color); border: 1px solid var(--card-border);">Appearance & Themes</button>
       </div>
 
@@ -143,6 +192,20 @@
     </div>
   </div>
 
+  <!-- Search Engines Modal -->
+  <div class="config-modal" id="searchengines-modal" role="dialog">
+    <div class="config-content" style="max-width: 800px;">
+      <h2>Custom Search Engines</h2>
+      <p class="config-hint" style="margin-bottom: 12px;">Map prefixes (e.g. <code>mdn</code>) to query URLs containing the query at the end (e.g. <code>https://developer.mozilla.org/en-US/search?q=</code>).</p>
+      <div id="searchengines-grid-editor" class="bookmarks-grid-editor"></div>
+      <div class="config-buttons">
+        <button class="btn-cancel" id="btn-cancel-searchengines">Discard</button>
+        <button class="btn-save" id="btn-save-searchengines">Save</button>
+        <button class="btn-cancel" id="btn-back-searchengines" style="margin-left: auto; border-color: var(--color-primary); color: var(--color-primary);">Back</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Customize Modal -->
   <div class="config-modal" id="customize-modal" role="dialog">
     <div class="config-content">
@@ -150,6 +213,32 @@
       <div class="config-section">
         <h3>Theme</h3>
         <div class="customize-theme-grid" id="customize-theme-grid"></div>
+      </div>
+
+      <div class="config-section">
+        <h3>Wallpapers</h3>
+        <div class="wallpaper-controls">
+          <label class="wallpaper-upload" for="config-wallpaper-files">Add Images</label>
+          <input type="file" id="config-wallpaper-files" accept="image/*" multiple />
+          <button type="button" class="btn-cancel" id="btn-next-wallpaper">Next</button>
+          <button type="button" class="btn-cancel" id="btn-clear-wallpapers">Clear</button>
+        </div>
+        <select id="config-wallpaper-schedule">
+          <option value="off">Keep current wallpaper</option>
+          <option value="newtab">New wallpaper every new tab</option>
+          <option value="hour">New wallpaper every hour</option>
+          <option value="day">New wallpaper every day</option>
+        </select>
+        <p class="config-hint" id="wallpaper-status">No wallpapers added.</p>
+        <div class="wallpaper-gallery" id="wallpaper-gallery"></div>
+      </div>
+
+      <div class="config-section">
+        <h3>Wallpaper Brightness</h3>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <input type="range" id="config-wallpaper-brightness" min="10" max="100" step="5" style="flex: 1; height: 6px; padding: 0;" />
+          <span id="brightness-value-display" style="font-family: var(--monospace-font-family); font-size: 14px; min-width: 40px; text-align: right;">90%</span>
+        </div>
       </div>
       <div class="config-buttons">
         <button class="btn-cancel" id="btn-cancel-customize">Cancel</button>
@@ -173,14 +262,15 @@
   <div id="loading-overlay"><div id="loading-ring"></div></div>
 
   <script src="script/ext-storage.js"></script>
-  <script src="script/focus-grab.js"></script>
   <script src="version/version.js"></script>
   <script src="script/utils.js"></script>
   <script src="script/ui.js"></script>
   <script src="script/storage.js"></script>
+  <script src="script/wallpapers.js"></script>
   <script src="script/bookmarks.js"></script>
   <script src="script/modals/config.js"></script>
   <script src="script/modals/bookmarks.js"></script>
+  <script src="script/modals/searchengines.js"></script>
   <script src="script/modals/help.js"></script>
   <script src="script/modals/customize.js"></script>
   <script src="script/modals/backup.js"></script>

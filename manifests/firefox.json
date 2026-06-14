@@ -19,7 +19,8 @@
     "128": "icon/128.png"
   },
   "permissions": [
-    "storage"
+    "storage",
+    "tabs"
   ],
   "content_security_policy": "script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com;",
   "web_accessible_resources": [

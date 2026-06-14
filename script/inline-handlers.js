@@ -18,6 +18,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // --- Config Modal ---
   on('btn-cancel-config',      () => closeConfig());
   on('btn-save-config',        () => saveConfig());
+  const wallpaperInput = document.getElementById('config-wallpaper-files');
+  if (wallpaperInput) wallpaperInput.addEventListener('change', handleWallpaperUpload);
+  on('btn-next-wallpaper',    () => handleNextWallpaper());
+  on('btn-clear-wallpapers',   () => handleClearWallpapers());
 
   // --- Help Modal ---
   on('btn-close-help',         () => closeHelp());
@@ -28,13 +32,35 @@ document.addEventListener('DOMContentLoaded', () => {
   on('btn-save-bookmarks',     () => saveBookmarksFromModal());
   on('btn-back-bookmarks',     () => closeBookmarksModal());
 
+  // --- Search Engines Modal ---
+  on('btn-edit-searchengines',   () => { closeConfig(); openSearchEnginesModal(); });
+  on('btn-cancel-searchengines', () => closeSearchEnginesModal());
+  on('btn-save-searchengines',   () => saveSearchEnginesFromModal());
+  on('btn-back-searchengines',   () => closeSearchEnginesModal());
+
   // --- Customize Modal ---
-  on('btn-reset-colors',       () => resetAllSyntaxColors());
   on('btn-cancel-customize',   () => closeCustomizeModal());
   on('btn-save-customize',     () => saveCustomize());
 
   // --- History Modal ---
   on('btn-clear-history',      () => clearHistory());
   on('btn-close-history',      () => closeHistoryModal());
+
+  // --- Live Results Click Interception ---
+  const liveResults = document.getElementById('live-results');
+  if (liveResults) {
+    liveResults.addEventListener('click', (e) => {
+      const item = e.target.closest('.live-result-item');
+      if (item) {
+        e.preventDefault();
+        const href = item.getAttribute('href');
+        if (typeof navigate === 'function') {
+          navigate(href);
+        } else {
+          window.location.href = href;
+        }
+      }
+    });
+  }
 
 });

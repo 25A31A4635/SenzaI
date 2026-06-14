@@ -10,6 +10,12 @@ function openConfig() {
   document.getElementById('config-key-close').value = getStoredKeyCloseTab();
   document.getElementById('config-key-new').value = getStoredKeyNewTab();
   
+  document.getElementById('config-enable-hint').checked = getStoredEnableAutocompleteHint();
+  document.getElementById('config-enable-dropdown').checked = getStoredEnableSuggestionDropdown();
+  document.getElementById('config-enable-dropdown-nav').checked = getStoredEnableDropdownNavigation();
+  document.getElementById('config-enable-status-line').checked = getStoredEnableStatusLine();
+  document.getElementById('config-enable-calculator').checked = getStoredEnableInlineCalculator();
+  
   const rounding = getStoredBarRounding();
   const roundingInput = document.getElementById('config-bar-rounding');
   const roundingDisplay = document.getElementById('rounding-value-display');
@@ -24,13 +30,18 @@ function openConfig() {
     };
   }
 
+  if (typeof syncCustomDropdowns === 'function') {
+    syncCustomDropdowns();
+  }
+
   document.getElementById('config-modal').classList.add('active');
 }
 
 function closeConfig() {
   document.getElementById('config-modal').classList.remove('active');
-  // Re-apply stored rounding in case they cancelled
+  // Re-apply stored settings in case they cancelled
   applyBarRounding(getStoredBarRounding());
+  if (typeof window.setTerminalDormant === 'function') window.setTerminalDormant();
 }
 
 function saveConfig() {
@@ -42,6 +53,12 @@ function saveConfig() {
   const kn = document.getElementById('config-key-new').value.trim().toLowerCase();
   const r = document.getElementById('config-bar-rounding').value;
   
+  const eh = document.getElementById('config-enable-hint').checked;
+  const ed = document.getElementById('config-enable-dropdown').checked;
+  const edn = document.getElementById('config-enable-dropdown-nav').checked;
+  const esl = document.getElementById('config-enable-status-line').checked;
+  const ec = document.getElementById('config-enable-calculator').checked;
+  
   if (u) saveUsername(u);
   saveSearchEngine(e);
   saveFontFamily(f);
@@ -49,9 +66,25 @@ function saveConfig() {
   if (kc) saveKeyCloseTab(kc);
   if (kn) saveKeyNewTab(kn);
   saveBarRounding(r);
+  saveEnableAutocompleteHint(eh);
+  saveEnableSuggestionDropdown(ed);
+  saveEnableDropdownNavigation(edn);
+  saveEnableStatusLine(esl);
+  saveEnableInlineCalculator(ec);
+
+  // Trigger immediate visibility update for the clock greeting line
+  if (typeof updateStatusLineVisibility === 'function') {
+    updateStatusLineVisibility();
+  }
   
   applyUserFont(f, l);
   applyBarRounding(r);
+  
+  // Re-run updates immediately
+  const inputEl = document.getElementById('terminal-input');
+  if (inputEl) {
+    updateSyntaxHighlight(inputEl.value);
+  }
   
   closeConfig();
   showToast('Settings Saved', 'success');
@@ -60,7 +93,3 @@ function saveConfig() {
 function _applyLiveRounding(val) {
   document.documentElement.style.setProperty('--bar-rounding', `${val}px`);
 }
-
-// Wire up buttons
-document.getElementById('btn-save-config').addEventListener('click', saveConfig);
-document.getElementById('btn-cancel-config').addEventListener('click', closeConfig);

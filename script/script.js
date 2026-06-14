@@ -17,7 +17,7 @@ function loadTheme() {
     document.body.classList.remove(`${t}-mode`);
     document.documentElement.classList.remove(`${t}-mode`);
   });
-  if (theme && theme !== 'light') {
+  if (theme) {
     document.body.classList.add(`${theme}-mode`);
     document.documentElement.classList.add(`${theme}-mode`);
   }
@@ -53,15 +53,19 @@ function applyBarRounding(val) {
   document.documentElement.style.setProperty('--bar-rounding', `${val}px`);
 }
 
+function applyWallpaperBrightness(val) {
+  const opacity = (100 - Number(val)) / 100;
+  document.documentElement.style.setProperty('--wallpaper-overlay-opacity', opacity);
+}
+
 /* --- Global Activation & Key Handling --- */
 
 /**
  * isActivated tracks whether the search bar is focused and listening.
  * In the dormant state (false), single-key shortcuts like 't' and 'x' are active.
  */
-let isActivated = false;
-
 (function setupGlobalKeyHandlers() {
+  let isActivated = false;
   const input = () => document.getElementById('terminal-input');
   
   const activate = () => {
@@ -70,14 +74,64 @@ let isActivated = false;
     document.body.classList.add('is-active');
     const el = input();
     if (el) el.focus({ preventScroll: true });
+    updateStatusLineVisibility();
   };
 
   const deactivate = () => {
     isActivated = false;
     document.body.classList.remove('is-active');
     const el = input();
-    if (el) el.blur();
+    if (el) {
+      el.value = '';
+      if (typeof updateSyntaxHighlight === 'function') updateSyntaxHighlight('');
+      el.blur();
+    }
+    updateStatusLineVisibility();
   };
+
+  function updateStatusLineVisibility() {
+    const statusEl = document.getElementById('status-line');
+    if (!statusEl) return;
+    
+    const enabled = (typeof getStoredEnableStatusLine === 'function') ? getStoredEnableStatusLine() : true;
+    
+    if (enabled && !isActivated) {
+      statusEl.classList.add('visible');
+      updateStatusText();
+    } else {
+      statusEl.classList.remove('visible');
+    }
+  }
+
+  function updateStatusText() {
+    const statusEl = document.getElementById('status-line');
+    if (!statusEl) return;
+    
+    const now = new Date();
+    let hours = now.getHours();
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+    const timeStr = `${hours}:${minutes} ${ampm}`;
+    
+    const currentHour = now.getHours();
+    let greeting = 'Hello';
+    if (currentHour >= 5 && currentHour < 12) {
+      greeting = 'Good morning';
+    } else if (currentHour >= 12 && currentHour < 17) {
+      greeting = 'Good afternoon';
+    } else {
+      greeting = 'Good evening';
+    }
+    
+    const username = (typeof getStoredUsername === 'function') ? getStoredUsername() : 'Abhidatta Benda';
+    statusEl.textContent = `${greeting}, ${username}. It's ${timeStr}.`;
+  }
+
+  window.setTerminalDormant = deactivate;
+  window.updateStatusLineVisibility = updateStatusLineVisibility;
+  window.updateStatusText = updateStatusText;
 
   // Main global keyboard listener
   window.addEventListener('keydown', (e) => {
@@ -89,6 +143,7 @@ let isActivated = false;
         if (typeof closeConfig === 'function') closeConfig();
         if (typeof closeHelp === 'function') closeHelp();
         if (typeof closeBookmarksModal === 'function') closeBookmarksModal();
+        if (typeof closeSearchEnginesModal === 'function') closeSearchEnginesModal();
         if (typeof closeCustomizeModal === 'function') closeCustomizeModal();
         if (typeof closeHistoryModal === 'function') closeHistoryModal();
         if (typeof _removeSpModal === 'function') _removeSpModal();
@@ -127,7 +182,17 @@ let isActivated = false;
 
       if (e.key.toLowerCase() === keyClose) {
         e.preventDefault();
-        window.close();
+        if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.getCurrent) {
+          chrome.tabs.getCurrent((tab) => {
+            if (tab && tab.id !== undefined) {
+              chrome.tabs.remove(tab.id);
+            } else {
+              window.close();
+            }
+          });
+        } else {
+          window.close();
+        }
         return;
       }
 
@@ -162,20 +227,40 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Wait for async storage shim if present
   if (window.extStorageReady) await window.extStorageReady;
   
+  // Load wallpapers from local extension storage cache
+  if (typeof loadWallpapersCache === 'function') {
+    await loadWallpapersCache();
+  }
+  
   // Load user settings
   applyUserFont(getStoredFontFamily(), getStoredFontUrl());
   applyBarRounding(getStoredBarRounding());
+  applyWallpaperBrightness(getStoredWallpaperBrightness());
   loadTheme();
   applySyntaxColors(getStoredSyntaxColors());
+  applyScheduledWallpaper();
   
   // Start the terminal logic
   initializeTerminal();
+
+  // Initialize custom themed dropdown selectors
+  if (typeof initializeCustomDropdowns === 'function') {
+    initializeCustomDropdowns();
+  }
+
+  // Start status clock loop
+  if (typeof updateStatusText === 'function') updateStatusText();
+  if (typeof updateStatusLineVisibility === 'function') updateStatusLineVisibility();
+  setInterval(() => {
+    if (typeof updateStatusText === 'function') updateStatusText();
+  }, 15000);
 
   // Redundant click-outside handlers for modals
   [
     ['config-modal', typeof closeConfig === 'function' ? closeConfig : null],
     ['help-modal', typeof closeHelp === 'function' ? closeHelp : null],
     ['bookmarks-modal', typeof closeBookmarksModal === 'function' ? closeBookmarksModal : null],
+    ['searchengines-modal', typeof closeSearchEnginesModal === 'function' ? closeSearchEnginesModal : null],
     ['customize-modal', typeof closeCustomizeModal === 'function' ? closeCustomizeModal : null],
     ['history-modal', typeof closeHistoryModal === 'function' ? closeHistoryModal : null],
   ].forEach(([id, fn]) => {

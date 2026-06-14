@@ -132,38 +132,6 @@ async function _loadFavicon(displayImg, domain, sources) {
   else        displayImg.style.display = 'none';
 }
 
-// ========================================
-// Bookmark rendering
-// ========================================
-const ITEMS_PER_SECTION = 5;
-
-// ---- Build a single bookmark <li> element ----
-function _buildBookmarkLi(bookmark) {
-  let domain = '';
-  try { domain = new URL(bookmark.href).hostname; } catch {}
-  const sources = _buildSources(domain);
-  const li = document.createElement('li');
-  li.innerHTML = `<a href="${bookmark.href}" class="bookmark-link"><img alt="${bookmark.title}" class="bookmark-icon"><span>${bookmark.title}</span></a>`;
-  const img = li.querySelector('img');
-  _loadFavicon(img, domain, sources);
-  return li;
-}
-
-// ---- Swap an <li>'s anchor to a new bookmark ----
-function _swapLiBookmark(li, bm) {
-  const a = li.querySelector('a');
-  a.href = bm.href;
-  a.querySelector('span').textContent = bm.title;
-  let domain = '';
-  try { domain = new URL(bm.href).hostname; } catch {}
-  const img = a.querySelector('img');
-  img.style.display = '';
-  _loadFavicon(img, domain, _buildSources(domain));
-}
-
-// Track original upfront bookmarks per slot for reset
-let _upfrontSlots = []; // Array of { li, bookmark }
-
 function getFilteredBookmarks(rawValue) {
   const value = (rawValue || '').trim().toLowerCase();
   if (!value) return [];
@@ -187,21 +155,29 @@ function renderLiveResults(rawValue) {
   const container = document.getElementById('live-results');
   if (!container) return;
 
+  if (typeof getStoredEnableSuggestionDropdown === 'function' && !getStoredEnableSuggestionDropdown()) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    return;
+  }
+
   const filtered = getFilteredBookmarks(rawValue).slice(0, 5);
 
   if (filtered.length === 0) {
     container.innerHTML = '';
+    container.style.display = 'none';
     return;
   }
 
+  container.style.display = 'flex';
   container.innerHTML = filtered.map(bm => {
     let domain = '';
     try { domain = new URL(bm.href).hostname; } catch {}
     return `
-      <a href="${bm.href}" class="live-result-item ${bm.type === 'shelf' ? 'shelf' : ''}">
+      <a href="${bm.href}" class="live-result-item">
         <span class="result-type">${bm.type}</span>
-        <span>${escapeHTML(bm.title)}</span>
-        <span style="margin-left: auto; opacity: 0.5; font-size: 12px;">${escapeHTML(domain)}</span>
+        <span class="result-title">${escapeHTML(bm.title)}</span>
+        <span class="result-domain">${escapeHTML(domain)}</span>
       </a>
     `;
   }).join('');

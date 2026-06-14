@@ -20,6 +20,9 @@ function initializeTerminal() {
   }
 }
 
+let activeResultIdx = -1;
+let originalTypedValue = "";
+
 /**
  * Sets up the input event listener for live syntax highlighting and hints.
  */
@@ -27,18 +30,20 @@ function handleInput(input) {
   input.addEventListener("input", () => {
     // Only process if no modal is obstructing the view
     if (document.querySelector('.config-modal.active, #sp-modal-overlay')) return;
+    activeResultIdx = -1;
+    originalTypedValue = input.value;
     updateSyntaxHighlight(input.value);
   });
 }
 
-/**
- * Updates the ghost-text hint behind the input based on current typing.
- * Prioritizes bookmarks first, then system commands.
- */
 function updateSyntaxHighlight(rawValue) {
   const value = rawValue.toLowerCase();
   const hintEl = document.getElementById('command-hint');
   const input = document.getElementById('terminal-input');
+
+  if (typeof renderLiveResults === 'function') {
+    renderLiveResults(rawValue);
+  }
 
   if (!value) {
     hintEl.textContent = '';
@@ -46,30 +51,47 @@ function updateSyntaxHighlight(rawValue) {
     return;
   }
 
-  // 1. Search for best matching bookmark
   let suggestion = null;
-  if (typeof getFilteredBookmarks === 'function') {
-    const matches = getFilteredBookmarks(rawValue);
-    // Only suggest if the match starts with what the user is typing
-    if (matches.length > 0 && matches[0].title.toLowerCase().startsWith(value)) {
-      suggestion = matches[0].title;
+
+  // 0. Search for math evaluation if calculator is enabled
+  const enableCalc = (typeof getStoredEnableInlineCalculator === 'function') ? getStoredEnableInlineCalculator() : true;
+  if (enableCalc) {
+    const isMath = /^[0-9+\-*/().\s%]+$/.test(rawValue) && /[0-9]/.test(rawValue) && /[\+\-\*\/%]/.test(rawValue);
+    if (isMath) {
+      try {
+        const ans = safeEval(rawValue);
+        if (ans !== null && !isNaN(ans)) {
+          suggestion = rawValue + " = " + ans;
+        }
+      } catch (e) {}
     }
   }
 
-  // 2. Search for matching system command if no bookmark found
-  if (!suggestion) {
-    const sysCommands = {
-      ':c': ':config',
-      ':cu': ':customize',
-      ':bm': ':bookmarks',
-      ':hi': ':history',
-      ':ve': ':version',
-      ':he': ':help'
-    };
-    for (const [prefix, full] of Object.entries(sysCommands)) {
-      if (full.startsWith(value)) {
-        suggestion = full;
-        break;
+  // 1. Search for best matching bookmark if not already resolved by math
+  if (!suggestion && (typeof getStoredEnableAutocompleteHint !== 'function' || getStoredEnableAutocompleteHint())) {
+    if (typeof getFilteredBookmarks === 'function') {
+      const matches = getFilteredBookmarks(rawValue);
+      // Only suggest if the match starts with what the user is typing
+      if (matches.length > 0 && matches[0].title.toLowerCase().startsWith(value)) {
+        suggestion = matches[0].title;
+      }
+    }
+
+    // 2. Search for matching system command if no bookmark found
+    if (!suggestion) {
+      const sysCommands = {
+        ':c': ':config',
+        ':cu': ':customize',
+        ':bm': ':bookmarks',
+        ':hi': ':history',
+        ':ve': ':version',
+        ':he': ':help'
+      };
+      for (const [prefix, full] of Object.entries(sysCommands)) {
+        if (full.startsWith(value)) {
+          suggestion = full;
+          break;
+        }
       }
     }
   }
@@ -98,6 +120,11 @@ function handleKeyboardEvents(input) {
     const anyModal = document.querySelector('.config-modal.active, #sp-modal-overlay');
     if (anyModal) return;
 
+    const enableNav = (typeof getStoredEnableDropdownNavigation === 'function') ? getStoredEnableDropdownNavigation() : true;
+    const resultsContainer = document.getElementById('live-results');
+    const items = resultsContainer ? resultsContainer.querySelectorAll('.live-result-item') : [];
+    const hasResults = resultsContainer && resultsContainer.style.display !== 'none' && items.length > 0;
+
     // --- Autocomplete Completion (Tab or Right Arrow) ---
     if ((e.key === "Tab" || e.key === "ArrowRight") && input.hasAttribute('data-suggestion')) {
       e.preventDefault();
@@ -106,15 +133,70 @@ function handleKeyboardEvents(input) {
       return;
     }
 
-    // --- Command History (Up or Down Arrow) ---
-    if (e.key === "ArrowUp") {
+    // --- Dropdown Navigation (Alt+j / Alt+k) ---
+    const isAltJ = e.altKey && e.key.toLowerCase() === 'j';
+    const isAltK = e.altKey && e.key.toLowerCase() === 'k';
+
+    if (isAltJ) {
+      if (hasResults && enableNav) {
+        e.preventDefault();
+        
+        // Remove highlight from previous item
+        if (activeResultIdx >= 0 && activeResultIdx < items.length) {
+          items[activeResultIdx].classList.remove('selected');
+        }
+        
+        // Move selection index forward
+        activeResultIdx++;
+        if (activeResultIdx >= items.length) {
+          activeResultIdx = -1;
+          input.value = originalTypedValue;
+          updateSyntaxHighlight(originalTypedValue);
+        } else {
+          items[activeResultIdx].classList.add('selected');
+          items[activeResultIdx].scrollIntoView({ block: 'nearest' });
+          
+          // Clear ghost hint
+          const hintEl = document.getElementById('command-hint');
+          if (hintEl) hintEl.textContent = '';
+        }
+        return;
+      }
+    }
+
+    if (isAltK) {
+      if (hasResults && enableNav && activeResultIdx >= 0) {
+        e.preventDefault();
+        
+        // Remove highlight from previous item
+        items[activeResultIdx].classList.remove('selected');
+        
+        // Move selection index backward
+        activeResultIdx--;
+        if (activeResultIdx === -1) {
+          input.value = originalTypedValue;
+          updateSyntaxHighlight(originalTypedValue);
+        } else {
+          items[activeResultIdx].classList.add('selected');
+          items[activeResultIdx].scrollIntoView({ block: 'nearest' });
+          
+          // Clear ghost hint
+          const hintEl = document.getElementById('command-hint');
+          if (hintEl) hintEl.textContent = '';
+        }
+        return;
+      }
+    }
+
+    // --- Command History (ArrowUp / ArrowDown) ---
+    if (e.key === "ArrowDown") {
       e.preventDefault();
       if (hIdx < history.length - 1) {
         hIdx++;
         input.value = history[hIdx];
         updateSyntaxHighlight(input.value);
       }
-    } else if (e.key === "ArrowDown") {
+    } else if (e.key === "ArrowUp") {
       e.preventDefault();
       if (hIdx > 0) {
         hIdx--;
@@ -130,14 +212,47 @@ function handleKeyboardEvents(input) {
     // --- Execution (Enter) ---
     if (e.key === "Enter") {
       e.preventDefault();
+      
+      // If we have a highlighted dropdown suggestion, navigate to it directly
+      if (hasResults && enableNav && activeResultIdx >= 0 && activeResultIdx < items.length) {
+        const targetHref = items[activeResultIdx].getAttribute('href');
+        pushHistory(originalTypedValue);
+        if (typeof navigate === 'function') {
+          navigate(targetHref);
+        } else {
+          window.location.href = targetHref;
+        }
+        return;
+      }
+
       const val = input.value.trim();
       if (!val) return;
+
+      const enableCalc = (typeof getStoredEnableInlineCalculator === 'function') ? getStoredEnableInlineCalculator() : true;
+      if (enableCalc) {
+        const isMath = /^[0-9+\-*/().\s%]+$/.test(val) && /[0-9]/.test(val) && /[\+\-\*\/%]/.test(val);
+        if (isMath) {
+          try {
+            const ans = safeEval(val);
+            if (ans !== null && !isNaN(ans)) {
+              pushHistory(val);
+              history = loadHistory().reverse();
+              hIdx = -1;
+              input.value = String(ans);
+              updateSyntaxHighlight(String(ans));
+              return;
+            }
+          } catch (e) {}
+        }
+      }
       
       // Auto-complete to suggestion if visible
       const suggestion = input.getAttribute('data-suggestion');
       const finalVal = (suggestion && suggestion.toLowerCase().startsWith(val.toLowerCase())) ? suggestion : val;
       
       pushHistory(finalVal);
+      history = loadHistory().reverse();
+      hIdx = -1;
       handleSpecialCommands(finalVal);
     }
   });
@@ -165,4 +280,47 @@ function pushHistory(entry) {
   h.push(entry);
   if (h.length > 50) h.shift();
   saveHistory(h);
+}
+
+function openHistory() {
+  renderHistoryList();
+  document.getElementById('history-modal').classList.add('active');
+}
+
+function closeHistoryModal() {
+  document.getElementById('history-modal').classList.remove('active');
+}
+
+function clearHistory() {
+  saveHistory([]);
+  renderHistoryList();
+  showToast('History cleared', 'success');
+}
+
+function renderHistoryList() {
+  const list = document.getElementById('history-list');
+  if (!list) return;
+
+  const history = loadHistory().slice().reverse();
+  if (history.length === 0) {
+    list.innerHTML = '<p class="history-empty">No commands yet</p>';
+    return;
+  }
+
+  list.innerHTML = '';
+  history.forEach((entry) => {
+    const button = document.createElement('button');
+    button.className = 'history-item';
+    button.type = 'button';
+    button.textContent = entry;
+    button.addEventListener('click', () => {
+      const input = document.getElementById('terminal-input');
+      if (input) {
+        input.value = entry;
+        updateSyntaxHighlight(entry);
+      }
+      closeHistoryModal();
+    });
+    list.appendChild(button);
+  });
 }

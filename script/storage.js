@@ -22,6 +22,7 @@ const DEFAULT_FONT_URL = "";
 const DEFAULT_KEY_CLOSE_TAB = "x";
 const DEFAULT_KEY_NEW_TAB = "t";
 const DEFAULT_BAR_ROUNDING = "32";
+const DEFAULT_WALLPAPER_SCHEDULE = "off";
 
 const DEFAULT_SYNTAX_COLORS = {
   cmd:     '#667eea',
@@ -81,6 +82,73 @@ function saveKeyNewTab(k) { localStorage.setItem('keyNewTab', k); }
 function getStoredBarRounding() { return localStorage.getItem('barRounding') || DEFAULT_BAR_ROUNDING; }
 function saveBarRounding(r) { localStorage.setItem('barRounding', r); }
 
+let _cachedWallpapers = [];
+
+/**
+ * Asynchronously loads wallpapers from chrome.storage.local or localStorage into memory cache.
+ */
+function loadWallpapersCache() {
+  return new Promise((resolve) => {
+    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+      chrome.storage.local.get(['wallpapers'], (result) => {
+        _cachedWallpapers = Array.isArray(result.wallpapers) ? result.wallpapers : [];
+        resolve();
+      });
+    } else {
+      try {
+        const wallpapers = JSON.parse(localStorage.getItem('wallpapers') || '[]');
+        _cachedWallpapers = Array.isArray(wallpapers) ? wallpapers : [];
+      } catch {
+        _cachedWallpapers = [];
+      }
+      resolve();
+    }
+  });
+}
+
+function getStoredWallpapers() {
+  return _cachedWallpapers;
+}
+
+function saveWallpapers(wallpapers) {
+  _cachedWallpapers = wallpapers;
+  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    chrome.storage.local.set({ wallpapers });
+  } else {
+    localStorage.setItem('wallpapers', JSON.stringify(wallpapers));
+  }
+}
+
+function getStoredWallpaperSchedule() { return localStorage.getItem('wallpaperSchedule') || DEFAULT_WALLPAPER_SCHEDULE; }
+function saveWallpaperSchedule(schedule) { localStorage.setItem('wallpaperSchedule', schedule); }
+
+function getStoredWallpaperBrightness() { return localStorage.getItem('wallpaperBrightness') || "90"; }
+function saveWallpaperBrightness(b) { localStorage.setItem('wallpaperBrightness', b); }
+
+function getStoredEnableAutocompleteHint() { return localStorage.getItem('enableAutocompleteHint') !== 'false'; }
+function saveEnableAutocompleteHint(enabled) { localStorage.setItem('enableAutocompleteHint', String(enabled)); }
+
+function getStoredEnableSuggestionDropdown() { return localStorage.getItem('enableSuggestionDropdown') !== 'false'; }
+function saveEnableSuggestionDropdown(enabled) { localStorage.setItem('enableSuggestionDropdown', String(enabled)); }
+
+function getStoredEnableDropdownNavigation() { return localStorage.getItem('enableDropdownNavigation') !== 'false'; }
+function saveEnableDropdownNavigation(enabled) { localStorage.setItem('enableDropdownNavigation', String(enabled)); }
+
+function getStoredEnableStatusLine() { return localStorage.getItem('enableStatusLine') !== 'false'; }
+function saveEnableStatusLine(enabled) { localStorage.setItem('enableStatusLine', String(enabled)); }
+
+function getStoredEnableInlineCalculator() { return localStorage.getItem('enableInlineCalculator') !== 'false'; }
+function saveEnableInlineCalculator(enabled) { localStorage.setItem('enableInlineCalculator', String(enabled)); }
+
+function getStoredWallpaperIndex() {
+  const idx = Number(localStorage.getItem('wallpaperIndex'));
+  return Number.isInteger(idx) ? idx : -1;
+}
+function saveWallpaperIndex(idx) { localStorage.setItem('wallpaperIndex', String(idx)); }
+
+function getStoredWallpaperCycleBucket() { return localStorage.getItem('wallpaperCycleBucket') || ''; }
+function saveWallpaperCycleBucket(bucket) { localStorage.setItem('wallpaperCycleBucket', bucket); }
+
 /**
  * Returns the object containing syntax highlighting hex codes.
  */
@@ -97,4 +165,16 @@ function applySyntaxColors(colors) {
   for (const [k, v] of Object.entries(colors)) {
     root.style.setProperty(`--syn-${k}`, v);
   }
+}
+
+function getStoredCustomSearchEngines() {
+  try {
+    const list = JSON.parse(localStorage.getItem('customSearchEngines'));
+    return Array.isArray(list) ? list : [];
+  } catch {
+    return [];
+  }
+}
+function saveCustomSearchEngines(engines) {
+  localStorage.setItem('customSearchEngines', JSON.stringify(engines));
 }
