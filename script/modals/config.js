@@ -15,6 +15,7 @@ function openConfig() {
   document.getElementById('config-enable-dropdown-nav').checked = getStoredEnableDropdownNavigation();
   document.getElementById('config-enable-status-line').checked = getStoredEnableStatusLine();
   document.getElementById('config-enable-calculator').checked = getStoredEnableInlineCalculator();
+  document.getElementById('config-enable-autofocus').checked = getStoredEnableAutofocus();
   
   const rounding = getStoredBarRounding();
   const roundingInput = document.getElementById('config-bar-rounding');
@@ -58,6 +59,7 @@ function saveConfig() {
   const edn = document.getElementById('config-enable-dropdown-nav').checked;
   const esl = document.getElementById('config-enable-status-line').checked;
   const ec = document.getElementById('config-enable-calculator').checked;
+  const eaf = document.getElementById('config-enable-autofocus').checked;
   
   if (u) saveUsername(u);
   saveSearchEngine(e);
@@ -71,6 +73,7 @@ function saveConfig() {
   saveEnableDropdownNavigation(edn);
   saveEnableStatusLine(esl);
   saveEnableInlineCalculator(ec);
+  saveEnableAutofocus(eaf);
 
   // Trigger immediate visibility update for the clock greeting line
   if (typeof updateStatusLineVisibility === 'function') {

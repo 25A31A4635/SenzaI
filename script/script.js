@@ -130,6 +130,7 @@ function applyWallpaperBrightness(val) {
   }
 
   window.setTerminalDormant = deactivate;
+  window.activateTerminal = activate;
   window.updateStatusLineVisibility = updateStatusLineVisibility;
   window.updateStatusText = updateStatusText;
 
@@ -276,4 +277,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const el = document.getElementById(id);
     if (el && fn) el.addEventListener('click', (e) => { if (e.target === el) fn(); });
   });
+
+  // Handle auto-focus option on load
+  if (typeof getStoredEnableAutofocus === 'function' && getStoredEnableAutofocus()) {
+    setTimeout(() => {
+      if (typeof window.activateTerminal === 'function') {
+        window.activateTerminal();
+      }
+    }, 60);
+  }
 });

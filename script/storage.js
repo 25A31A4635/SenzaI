@@ -140,6 +140,9 @@ function saveEnableStatusLine(enabled) { localStorage.setItem('enableStatusLine'
 function getStoredEnableInlineCalculator() { return localStorage.getItem('enableInlineCalculator') !== 'false'; }
 function saveEnableInlineCalculator(enabled) { localStorage.setItem('enableInlineCalculator', String(enabled)); }
 
+function getStoredEnableAutofocus() { return localStorage.getItem('enableAutofocus') === 'true'; }
+function saveEnableAutofocus(enabled) { localStorage.setItem('enableAutofocus', String(enabled)); }
+
 function getStoredWallpaperIndex() {
   const idx = Number(localStorage.getItem('wallpaperIndex'));
   return Number.isInteger(idx) ? idx : -1;
