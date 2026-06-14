@@ -169,6 +169,10 @@ function renderLiveResults(rawValue) {
     return;
   }
 
+  // Get current height before changing contents
+  const isVisible = container.classList.contains('visible');
+  const prevHeight = isVisible ? container.getBoundingClientRect().height : 0;
+
   container.innerHTML = filtered.map(bm => {
     let domain = '';
     try { domain = new URL(bm.href).hostname; } catch {}
@@ -185,6 +189,15 @@ function renderLiveResults(rawValue) {
 
   // Trigger smooth height shift
   requestAnimationFrame(() => {
-    container.style.height = `${container.scrollHeight}px`;
+    // Reset to auto to measure new content height accurately
+    container.style.height = 'auto';
+    const targetHeight = container.scrollHeight;
+    
+    // Temporarily apply previous height and trigger browser layout reflow
+    container.style.height = `${prevHeight}px`;
+    container.offsetHeight; // Force layout recalculation
+    
+    // Apply target height so the transition plays smoothly
+    container.style.height = `${targetHeight}px`;
   });
 }
