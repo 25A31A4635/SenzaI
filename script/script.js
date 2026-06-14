@@ -167,6 +167,15 @@ function applyWallpaperBrightness(val) {
         return;
       }
 
+      if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        activate();
+        if (typeof window.navigateHistoryExternal === 'function') {
+          window.navigateHistoryExternal(e.key);
+        }
+        return;
+      }
+
       // Tab management shortcuts
       const keyNew = (typeof getStoredKeyNewTab === 'function') ? getStoredKeyNewTab() : 't';
       const keyClose = (typeof getStoredKeyCloseTab === 'function') ? getStoredKeyCloseTab() : 'x';

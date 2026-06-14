@@ -22,6 +22,8 @@ function initializeTerminal() {
 
 let activeResultIdx = -1;
 let originalTypedValue = "";
+let terminalHistory = [];
+let terminalHistoryIdx = -1;
 
 /**
  * Sets up the input event listener for live syntax highlighting and hints.
@@ -112,8 +114,8 @@ function updateSyntaxHighlight(rawValue) {
  * Handles Tab, Arrow, and Enter keys for completion and navigation.
  */
 function handleKeyboardEvents(input) {
-  let history = loadHistory().reverse();
-  let hIdx = -1;
+  terminalHistory = loadHistory().reverse();
+  terminalHistoryIdx = -1;
 
   input.addEventListener("keydown", (e) => {
     // Ignore input events if a modal is open
@@ -133,11 +135,8 @@ function handleKeyboardEvents(input) {
       return;
     }
 
-    // --- Dropdown Navigation (Alt+j / Alt+k) ---
-    const isAltJ = e.altKey && e.key.toLowerCase() === 'j';
-    const isAltK = e.altKey && e.key.toLowerCase() === 'k';
-
-    if (isAltJ) {
+    // --- Arrow Keys: Dropdown Navigation vs. History Navigation ---
+    if (e.key === "ArrowDown") {
       if (hasResults && enableNav) {
         e.preventDefault();
         
@@ -146,7 +145,7 @@ function handleKeyboardEvents(input) {
           items[activeResultIdx].classList.remove('selected');
         }
         
-        // Move selection index forward
+        // Move selection index forward (downwards)
         activeResultIdx++;
         if (activeResultIdx >= items.length) {
           activeResultIdx = -1;
@@ -160,19 +159,37 @@ function handleKeyboardEvents(input) {
           const hintEl = document.getElementById('command-hint');
           if (hintEl) hintEl.textContent = '';
         }
-        return;
+      } else {
+        // Navigate history forward (towards newer items / clear)
+        e.preventDefault();
+        if (terminalHistoryIdx > 0) {
+          terminalHistoryIdx--;
+          input.value = terminalHistory[terminalHistoryIdx];
+          updateSyntaxHighlight(input.value);
+        } else if (terminalHistoryIdx === 0) {
+          terminalHistoryIdx = -1;
+          input.value = originalTypedValue || "";
+          updateSyntaxHighlight(input.value);
+        }
       }
+      return;
     }
 
-    if (isAltK) {
-      if (hasResults && enableNav && activeResultIdx >= 0) {
+    if (e.key === "ArrowUp") {
+      if (hasResults && enableNav) {
         e.preventDefault();
         
         // Remove highlight from previous item
-        items[activeResultIdx].classList.remove('selected');
+        if (activeResultIdx >= 0 && activeResultIdx < items.length) {
+          items[activeResultIdx].classList.remove('selected');
+        }
         
-        // Move selection index backward
+        // Move selection index backward (upwards)
         activeResultIdx--;
+        if (activeResultIdx < -1) {
+          activeResultIdx = items.length - 1;
+        }
+        
         if (activeResultIdx === -1) {
           input.value = originalTypedValue;
           updateSyntaxHighlight(originalTypedValue);
@@ -184,29 +201,16 @@ function handleKeyboardEvents(input) {
           const hintEl = document.getElementById('command-hint');
           if (hintEl) hintEl.textContent = '';
         }
-        return;
-      }
-    }
-
-    // --- Command History (ArrowUp / ArrowDown) ---
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      if (hIdx < history.length - 1) {
-        hIdx++;
-        input.value = history[hIdx];
-        updateSyntaxHighlight(input.value);
-      }
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      if (hIdx > 0) {
-        hIdx--;
-        input.value = history[hIdx];
-        updateSyntaxHighlight(input.value);
       } else {
-        hIdx = -1;
-        input.value = "";
-        updateSyntaxHighlight("");
+        // Navigate history backward (towards older items)
+        e.preventDefault();
+        if (terminalHistoryIdx < terminalHistory.length - 1) {
+          terminalHistoryIdx++;
+          input.value = terminalHistory[terminalHistoryIdx];
+          updateSyntaxHighlight(input.value);
+        }
       }
+      return;
     }
 
     // --- Execution (Enter) ---
@@ -236,8 +240,8 @@ function handleKeyboardEvents(input) {
             const ans = safeEval(val);
             if (ans !== null && !isNaN(ans)) {
               pushHistory(val);
-              history = loadHistory().reverse();
-              hIdx = -1;
+              terminalHistory = loadHistory().reverse();
+              terminalHistoryIdx = -1;
               input.value = String(ans);
               updateSyntaxHighlight(String(ans));
               return;
@@ -251,12 +255,43 @@ function handleKeyboardEvents(input) {
       const finalVal = (suggestion && suggestion.toLowerCase().startsWith(val.toLowerCase())) ? suggestion : val;
       
       pushHistory(finalVal);
-      history = loadHistory().reverse();
-      hIdx = -1;
+      terminalHistory = loadHistory().reverse();
+      terminalHistoryIdx = -1;
       handleSpecialCommands(finalVal);
     }
   });
 }
+
+/**
+ * Traverses history externally (e.g. from dormant mode).
+ */
+function navigateHistoryExternal(key) {
+  const input = document.getElementById("terminal-input");
+  if (!input) return;
+
+  if (terminalHistory.length === 0) {
+    terminalHistory = loadHistory().reverse();
+  }
+
+  if (key === "ArrowUp") {
+    if (terminalHistoryIdx < terminalHistory.length - 1) {
+      terminalHistoryIdx++;
+      input.value = terminalHistory[terminalHistoryIdx];
+      updateSyntaxHighlight(input.value);
+    }
+  } else if (key === "ArrowDown") {
+    if (terminalHistoryIdx > 0) {
+      terminalHistoryIdx--;
+      input.value = terminalHistory[terminalHistoryIdx];
+      updateSyntaxHighlight(input.value);
+    } else {
+      terminalHistoryIdx = -1;
+      input.value = "";
+      updateSyntaxHighlight("");
+    }
+  }
+}
+window.navigateHistoryExternal = navigateHistoryExternal;
 
 /**
  * Escapes HTML characters to prevent XSS.
