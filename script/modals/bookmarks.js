@@ -17,8 +17,10 @@ function closeBookmarksModal() {
 function renderGridEditor(bookmarks) {
   const grid = document.getElementById('bookmarks-grid-editor');
   const textarea = document.getElementById('config-textarea');
+  const addBtn = document.getElementById('btn-add-bookmark');
   grid.classList.remove('hidden');
   textarea.classList.add('hidden');
+  if (addBtn) addBtn.classList.remove('hidden');
   grid.innerHTML = '';
 
   bookmarks.forEach((bm, idx) => _addBookmarkRow(bm, grid, idx));
@@ -73,6 +75,7 @@ function toggleEditorMode() {
   const grid = document.getElementById('bookmarks-grid-editor');
   const textarea = document.getElementById('config-textarea');
   const btn = document.getElementById('toggle-editor-btn');
+  const addBtn = document.getElementById('btn-add-bookmark');
 
   const inJsonMode = !textarea.classList.contains('hidden');
 
@@ -83,6 +86,7 @@ function toggleEditorMode() {
       textarea.classList.add('hidden');
       renderGridEditor(parsed);
       grid.classList.remove('hidden');
+      if (addBtn) addBtn.classList.remove('hidden');
       btn.textContent = 'Edit JSON';
     } catch {
       showAlert('Invalid JSON format.', { type: 'error', title: 'Invalid JSON' });
@@ -92,6 +96,7 @@ function toggleEditorMode() {
     textarea.value = JSON.stringify(bookmarks, null, 2);
     textarea.classList.remove('hidden');
     grid.classList.add('hidden');
+    if (addBtn) addBtn.classList.add('hidden');
     btn.textContent = 'Edit List';
   }
 }

@@ -28,12 +28,24 @@ document.addEventListener('DOMContentLoaded', () => {
   on('btn-cancel-bookmarks',   () => closeBookmarksModal());
   on('btn-save-bookmarks',     () => saveBookmarksFromModal());
   on('btn-back-bookmarks',     () => closeBookmarksModal());
+  on('btn-add-bookmark',       () => {
+    const grid = document.getElementById('bookmarks-grid-editor');
+    if (grid) {
+      _addBookmarkRow({ title: '', href: '' }, grid, grid.children.length);
+    }
+  });
 
   // --- Search Engines Modal ---
   on('btn-edit-searchengines',   () => { closeConfig(); openSearchEnginesModal(); });
   on('btn-cancel-searchengines', () => closeSearchEnginesModal());
   on('btn-save-searchengines',   () => saveSearchEnginesFromModal());
   on('btn-back-searchengines',   () => closeSearchEnginesModal());
+  on('btn-add-searchengine',     () => {
+    const grid = document.getElementById('searchengines-grid-editor');
+    if (grid) {
+      _addSearchEngineRow({ prefix: '', url: '' }, grid, grid.children.length);
+    }
+  });
 
   // --- Customize Modal ---
   on('btn-cancel-customize',   () => closeCustomizeModal());
