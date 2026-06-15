@@ -16,6 +16,28 @@ function initializeTerminal() {
   if (!input._listenersAttached) {
     handleInput(input);
     handleKeyboardEvents(input);
+    
+    input.addEventListener('focus', () => {
+      if (typeof updateFocusIndicator === 'function') updateFocusIndicator();
+    });
+    input.addEventListener('blur', () => {
+      if (typeof updateFocusIndicator === 'function') updateFocusIndicator();
+    });
+    input.addEventListener('keydown', () => {
+      setTimeout(() => {
+        if (typeof updateFocusIndicator === 'function') updateFocusIndicator();
+      }, 0);
+    });
+    input.addEventListener('keyup', () => {
+      if (typeof updateFocusIndicator === 'function') updateFocusIndicator();
+    });
+    input.addEventListener('click', () => {
+      if (typeof updateFocusIndicator === 'function') updateFocusIndicator();
+    });
+    input.addEventListener('scroll', () => {
+      if (typeof updateFocusIndicator === 'function') updateFocusIndicator();
+    });
+    
     input._listenersAttached = true;
   }
 }
@@ -38,10 +60,93 @@ function handleInput(input) {
   });
 }
 
+/**
+ * Renders syntax highlighting markup into the syntax-overlay element.
+ */
+function renderSyntaxHighlight(rawValue) {
+  const overlay = document.getElementById('syntax-overlay');
+  if (!overlay) return;
+
+  if (!rawValue) {
+    overlay.innerHTML = '';
+    return;
+  }
+
+  const value = rawValue.trim();
+  const lowerValue = value.toLowerCase();
+
+  // Preserve leading/trailing spaces for layout alignment
+  const leadingSpaces = rawValue.match(/^\s*/)[0];
+  const trailingSpaces = rawValue.match(/\s*$/)[0];
+
+  let htmlContent = '';
+
+  const isMath = /^[0-9+\-*/().\s%]+$/.test(value) && /[0-9]/.test(value) && /[\+\-\*\/%]/.test(value);
+  const isUrl = value.includes('.') && !value.includes(' ');
+
+  if (lowerValue.startsWith(':')) {
+    const sysCommands = [':help', ':config', ':customize', ':bookmarks', ':history', ':version', ':ver', ':reset'];
+    const themeName = lowerValue.slice(1);
+    const themeAliases = ['ctp-frappe', 'frappe', 'ctp-macchiato', 'macchiato', 'ctp-mocha', 'mocha', 'tokyo', 'tokyo-night'];
+    const isValidTheme = (typeof THEMES !== 'undefined' ? THEMES : []).includes(themeName) || themeAliases.includes(themeName);
+
+    if (sysCommands.includes(lowerValue)) {
+      htmlContent = `<span class="syn-cmd">${escapeHTML(value)}</span>`;
+    } else if (isValidTheme) {
+      htmlContent = `<span class="syn-theme">${escapeHTML(value)}</span>`;
+    } else {
+      htmlContent = `<span class="syn-unknown">${escapeHTML(value)}</span>`;
+    }
+  } else if (isMath) {
+    htmlContent = value.replace(/([0-9.]+)/g, '<span class="syn-url">$1</span>')
+                       .replace(/([\+\-\*\/%()]+)/g, '<span class="syn-cmd">$1</span>');
+  } else if (isUrl) {
+    htmlContent = `<span class="syn-url">${escapeHTML(value)}</span>`;
+  } else {
+    const searchPrefixes = ['yt:', 'r:', 'ddg:', 'gh:', 'ma:'];
+    if (typeof getStoredCustomSearchEngines === 'function') {
+      const customList = getStoredCustomSearchEngines();
+      customList.forEach(item => {
+        if (item.prefix) {
+          const pfx = item.prefix.endsWith(':') ? item.prefix.toLowerCase() : `${item.prefix.toLowerCase()}:`;
+          if (!searchPrefixes.includes(pfx)) {
+            searchPrefixes.push(pfx);
+          }
+        }
+      });
+    }
+
+    let matchedPrefix = null;
+    for (const prefix of searchPrefixes) {
+      if (lowerValue.startsWith(prefix)) {
+        matchedPrefix = value.substring(0, prefix.length);
+        break;
+      }
+    }
+
+    if (matchedPrefix) {
+      const rest = value.substring(matchedPrefix.length);
+      htmlContent = `<span class="syn-search">${escapeHTML(matchedPrefix)}</span><span class="syn-text">${escapeHTML(rest)}</span>`;
+    } else {
+      htmlContent = `<span class="syn-text">${escapeHTML(value)}</span>`;
+    }
+  }
+
+  overlay.innerHTML = leadingSpaces + htmlContent + trailingSpaces;
+}
+
 function updateSyntaxHighlight(rawValue) {
   const value = rawValue.toLowerCase();
   const hintEl = document.getElementById('command-hint');
   const input = document.getElementById('terminal-input');
+
+  // Render highlighted syntax overlay
+  renderSyntaxHighlight(rawValue);
+
+  // Always update focus indicator first to handle clearing text / Ctrl+A Backspace
+  if (typeof updateFocusIndicator === 'function') {
+    updateFocusIndicator();
+  }
 
   if (typeof renderLiveResults === 'function') {
     renderLiveResults(rawValue);
@@ -79,19 +184,24 @@ function updateSyntaxHighlight(rawValue) {
       }
     }
 
-    // 2. Search for matching system command if no bookmark found
+    // 2. Search for matching system command or theme command if no bookmark found
     if (!suggestion) {
-      const sysCommands = {
-        ':c': ':config',
-        ':cu': ':customize',
-        ':bm': ':bookmarks',
-        ':hi': ':history',
-        ':ve': ':version',
-        ':he': ':help'
-      };
-      for (const [prefix, full] of Object.entries(sysCommands)) {
-        if (full.startsWith(value)) {
-          suggestion = full;
+      const themesList = (typeof THEMES !== 'undefined' ? THEMES : []).map(t => ':' + t);
+      const themeAliases = [':rp', ':rp-moon', ':rp-dawn', ':forest', ':forest-light', ':onedark', ':cyber'];
+      const sysCommands = [
+        ':config',
+        ':customize',
+        ':bookmarks',
+        ':history',
+        ':version',
+        ':help',
+        ':reset',
+        ...themesList,
+        ...themeAliases
+      ];
+      for (const cmd of sysCommands) {
+        if (cmd.startsWith(value)) {
+          suggestion = cmd;
           break;
         }
       }
@@ -216,6 +326,7 @@ function handleKeyboardEvents(input) {
     // --- Execution (Enter) ---
     if (e.key === "Enter") {
       e.preventDefault();
+      e.stopPropagation();
       
       // If we have a highlighted dropdown suggestion, navigate to it directly
       if (hasResults && enableNav && activeResultIdx >= 0 && activeResultIdx < items.length) {
@@ -358,4 +469,108 @@ function renderHistoryList() {
     });
     list.appendChild(button);
   });
+}
+
+function updateFocusIndicator() {
+  const input = document.getElementById('terminal-input');
+  const indicator = document.getElementById('focus-indicator-line');
+  const ruler = document.getElementById('text-ruler');
+  const cursor = document.getElementById('terminal-cursor');
+  if (!input || !indicator || !ruler) return;
+
+  const rawValue = input.value;
+  ruler.textContent = rawValue;
+
+  const totalTextWidth = ruler.offsetWidth;
+
+  // Expose ruler width as CSS variable for centering calculations
+  document.documentElement.style.setProperty('--ruler-width', `${totalTextWidth}px`);
+
+  const wrapper = input.closest('.terminal-input-wrapper');
+  const maxWidth = wrapper ? wrapper.offsetWidth : 0;
+  const isOverflowing = maxWidth > 0 && totalTextWidth > maxWidth;
+
+  // Toggle overflowing class on the input wrapper for layout styling
+  if (wrapper) {
+    if (isOverflowing) {
+      wrapper.classList.add('overflowing');
+    } else {
+      wrapper.classList.remove('overflowing');
+    }
+  }
+
+  // Sync scrollLeft of syntax overlay and command hint with terminal input
+  const overlay = document.getElementById('syntax-overlay');
+  if (overlay) {
+    overlay.scrollLeft = input.scrollLeft;
+  }
+  const hintEl = document.getElementById('command-hint');
+  if (hintEl) {
+    hintEl.scrollLeft = input.scrollLeft;
+  }
+
+  // Cap the underline width to the visible input wrapper width to handle text scrolling
+  const finalWidth = maxWidth > 0 ? Math.min(totalTextWidth, maxWidth) : totalTextWidth;
+  indicator.style.width = `${finalWidth}px`;
+
+  const customizeModal = document.getElementById('customize-modal');
+  const isModalActive = customizeModal && customizeModal.classList.contains('active');
+
+  const focusIndicatorSelect = document.getElementById('config-focus-indicator-mode');
+  const mode = (focusIndicatorSelect && isModalActive) ? focusIndicatorSelect.value : ((typeof getStoredFocusIndicatorMode === 'function') ? getStoredFocusIndicatorMode() : 'off');
+
+  // Style according to selected mode (glowing vs regular)
+  indicator.classList.remove('mode-glowing', 'mode-regular');
+  if (mode === 'glowing') {
+    indicator.classList.add('mode-glowing');
+  } else if (mode === 'regular') {
+    indicator.classList.add('mode-regular');
+  }
+
+  const show = mode !== 'off' && document.activeElement === input && rawValue.length > 0;
+  indicator.style.opacity = show ? '1' : '0';
+
+  // --- Block Cursor Logic ---
+  if (cursor) {
+    const cursorBlockInput = document.getElementById('config-cursor-block');
+    const isBlockMode = (cursorBlockInput && isModalActive) ? cursorBlockInput.checked : ((typeof getStoredCursorBlock === 'function') ? getStoredCursorBlock() : false);
+    
+    const isFocused = document.activeElement === input;
+    const hasSelection = input.selectionStart !== input.selectionEnd;
+
+    if (isBlockMode && isFocused && !hasSelection) {
+      input.classList.add('cursor-block');
+      cursor.classList.add('active', 'blinking');
+
+      const cursorIndex = input.selectionStart;
+
+      // Measure width of text before the cursor
+      ruler.textContent = rawValue.substring(0, cursorIndex);
+      const textBeforeWidth = ruler.offsetWidth;
+
+      // Measure single character width
+      ruler.textContent = "A";
+      const charWidth = ruler.offsetWidth;
+
+      // Restore ruler text
+      ruler.textContent = rawValue;
+
+      cursor.style.width = `${charWidth}px`;
+      cursor.style.height = `${ruler.offsetHeight || 24}px`;
+
+      const barTextCenterInput = document.getElementById('config-bar-text-center');
+      const textCenter = (barTextCenterInput && isModalActive) ? barTextCenterInput.checked : ((typeof getStoredBarTextCenter === 'function') ? getStoredBarTextCenter() : false);
+
+      const scrollOffset = input.scrollLeft || 0;
+
+      if (textCenter && !isOverflowing) {
+        cursor.style.left = `calc(50% - ${totalTextWidth / 2}px + ${textBeforeWidth - scrollOffset}px)`;
+      } else {
+        cursor.style.left = `${textBeforeWidth - scrollOffset}px`;
+      }
+    } else {
+      input.classList.remove('cursor-block');
+      cursor.classList.remove('active', 'blinking');
+    }
+  }
 }

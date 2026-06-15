@@ -43,13 +43,23 @@ function handleSpecialCommands(rawValue) {
       'macchiato':     'catppuccin-macchiato',
       'ctp-mocha':  'catppuccin-mocha',
       'mocha':      'catppuccin-mocha',
-      'tokyo':      'tokyo-night'
+      'tokyo':      'tokyo-night',
+      'rp':         'rose-pine',
+      'rp-moon':    'rose-pine-moon',
+      'rp-dawn':    'rose-pine-dawn',
+      'forest':     'everforest',
+      'forest-light': 'everforest-light',
+      'onedark':    'one-dark',
+      'cyber':      'cyberpunk'
     };
     const target = themeAliases[theme] || theme;
     if (THEMES.includes(target)) {
       applyTheme(target);
       saveTheme(target);
       clear();
+      if (typeof window.setTerminalDormant === 'function') {
+        window.setTerminalDormant();
+      }
       return;
     }
   }

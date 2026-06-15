@@ -15,14 +15,13 @@ const DEFAULT_BOOKMARKS = [
   { href: "https://twitter.com", title: "Twitter" }
 ];
 
-const DEFAULT_USERNAME = "Abhidatta Benda";
+const DEFAULT_USERNAME = "user";
 const DEFAULT_SEARCH_ENGINE = "google";
 const DEFAULT_FONT_FAMILY = "";
 const DEFAULT_FONT_URL = "";
 const DEFAULT_KEY_CLOSE_TAB = "x";
 const DEFAULT_KEY_NEW_TAB = "t";
 const DEFAULT_BAR_ROUNDING = "32";
-const DEFAULT_WALLPAPER_SCHEDULE = "off";
 
 const DEFAULT_SYNTAX_COLORS = {
   cmd:     '#667eea',
@@ -82,48 +81,6 @@ function saveKeyNewTab(k) { localStorage.setItem('keyNewTab', k); }
 function getStoredBarRounding() { return localStorage.getItem('barRounding') || DEFAULT_BAR_ROUNDING; }
 function saveBarRounding(r) { localStorage.setItem('barRounding', r); }
 
-let _cachedWallpapers = [];
-
-/**
- * Asynchronously loads wallpapers from chrome.storage.local or localStorage into memory cache.
- */
-function loadWallpapersCache() {
-  return new Promise((resolve) => {
-    if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-      chrome.storage.local.get(['wallpapers'], (result) => {
-        _cachedWallpapers = Array.isArray(result.wallpapers) ? result.wallpapers : [];
-        resolve();
-      });
-    } else {
-      try {
-        const wallpapers = JSON.parse(localStorage.getItem('wallpapers') || '[]');
-        _cachedWallpapers = Array.isArray(wallpapers) ? wallpapers : [];
-      } catch {
-        _cachedWallpapers = [];
-      }
-      resolve();
-    }
-  });
-}
-
-function getStoredWallpapers() {
-  return _cachedWallpapers;
-}
-
-function saveWallpapers(wallpapers) {
-  _cachedWallpapers = wallpapers;
-  if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-    chrome.storage.local.set({ wallpapers });
-  } else {
-    localStorage.setItem('wallpapers', JSON.stringify(wallpapers));
-  }
-}
-
-function getStoredWallpaperSchedule() { return localStorage.getItem('wallpaperSchedule') || DEFAULT_WALLPAPER_SCHEDULE; }
-function saveWallpaperSchedule(schedule) { localStorage.setItem('wallpaperSchedule', schedule); }
-
-function getStoredWallpaperBrightness() { return localStorage.getItem('wallpaperBrightness') || "90"; }
-function saveWallpaperBrightness(b) { localStorage.setItem('wallpaperBrightness', b); }
 
 function getStoredEnableAutocompleteHint() { return localStorage.getItem('enableAutocompleteHint') !== 'false'; }
 function saveEnableAutocompleteHint(enabled) { localStorage.setItem('enableAutocompleteHint', String(enabled)); }
@@ -143,14 +100,41 @@ function saveEnableInlineCalculator(enabled) { localStorage.setItem('enableInlin
 function getStoredEnableAutofocus() { return localStorage.getItem('enableAutofocus') === 'true'; }
 function saveEnableAutofocus(enabled) { localStorage.setItem('enableAutofocus', String(enabled)); }
 
-function getStoredWallpaperIndex() {
-  const idx = Number(localStorage.getItem('wallpaperIndex'));
-  return Number.isInteger(idx) ? idx : -1;
-}
-function saveWallpaperIndex(idx) { localStorage.setItem('wallpaperIndex', String(idx)); }
 
-function getStoredWallpaperCycleBucket() { return localStorage.getItem('wallpaperCycleBucket') || ''; }
-function saveWallpaperCycleBucket(bucket) { localStorage.setItem('wallpaperCycleBucket', bucket); }
+/* --- Bar Material & Position Styling Settings --- */
+function getStoredBarOpacity() { return localStorage.getItem('barOpacity') || "90"; }
+function saveBarOpacity(val) { localStorage.setItem('barOpacity', String(val)); }
+
+function getStoredBarBlur() { return localStorage.getItem('barBlur') || "18"; }
+function saveBarBlur(val) { localStorage.setItem('barBlur', String(val)); }
+
+function getStoredBarInvisible() { return localStorage.getItem('barInvisible') === 'true'; }
+function saveBarInvisible(val) { localStorage.setItem('barInvisible', String(val)); }
+
+function getStoredBarTextOpacity() { return localStorage.getItem('barTextOpacity') || "100"; }
+function saveBarTextOpacity(val) { localStorage.setItem('barTextOpacity', String(val)); }
+
+function getStoredBarTextCenter() { return localStorage.getItem('barTextCenter') === 'true'; }
+function saveBarTextCenter(val) { localStorage.setItem('barTextCenter', String(val)); }
+
+function getStoredFocusIndicatorMode() { return localStorage.getItem('focusIndicatorMode') || "off"; }
+function saveFocusIndicatorMode(mode) { localStorage.setItem('focusIndicatorMode', mode); }
+
+function getStoredBarPositionMode() { return localStorage.getItem('barPositionMode') || "preset"; }
+function saveBarPositionMode(mode) { localStorage.setItem('barPositionMode', mode); }
+
+function getStoredBarPositionPreset() { return localStorage.getItem('barPositionPreset') || "center"; }
+function saveBarPositionPreset(preset) { localStorage.setItem('barPositionPreset', preset); }
+
+function getStoredBarCustomX() { return localStorage.getItem('barCustomX') || "50"; }
+function saveBarCustomX(x) { localStorage.setItem('barCustomX', String(x)); }
+
+function getStoredBarCustomY() { return localStorage.getItem('barCustomY') || "50"; }
+function saveBarCustomY(y) { localStorage.setItem('barCustomY', String(y)); }
+
+function getStoredBarSnapMode() { return localStorage.getItem('barSnapMode') || "free"; }
+function saveBarSnapMode(mode) { localStorage.setItem('barSnapMode', mode); }
+
 
 /**
  * Returns the object containing syntax highlighting hex codes.
@@ -181,3 +165,19 @@ function getStoredCustomSearchEngines() {
 function saveCustomSearchEngines(engines) {
   localStorage.setItem('customSearchEngines', JSON.stringify(engines));
 }
+
+function getStoredCursorBlock() { return localStorage.getItem('cursorBlock') === 'true'; }
+function saveCursorBlock(val) { localStorage.setItem('cursorBlock', String(val)); }
+
+function getStoredTime24h() { return localStorage.getItem('time24h') === 'true'; }
+function saveTime24h(val) { localStorage.setItem('time24h', String(val)); }
+
+function getStoredStatusShowDay() { return localStorage.getItem('statusShowDay') !== 'false'; }
+function saveStatusShowDay(val) { localStorage.setItem('statusShowDay', String(val)); }
+
+function getStoredStatusShowMonth() { return localStorage.getItem('statusShowMonth') !== 'false'; }
+function saveStatusShowMonth(val) { localStorage.setItem('statusShowMonth', String(val)); }
+
+function getStoredStatusShowDate() { return localStorage.getItem('statusShowDate') !== 'false'; }
+function saveStatusShowDate(val) { localStorage.setItem('statusShowDate', String(val)); }
+

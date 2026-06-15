@@ -1,6 +1,4 @@
-// ========================================
-// Customize Modal — Appearance & Wallpaper Customizer
-// ========================================
+// Customize Modal — Appearance Customizer
 
 const THEME_DEFS = [
   { value: 'light',                label: 'Light'       },
@@ -14,49 +12,199 @@ const THEME_DEFS = [
   { value: 'catppuccin-frappe',    label: 'CTP Frappe'  },
   { value: 'catppuccin-macchiato', label: 'CTP Macchiato'},
   { value: 'catppuccin-mocha',     label: 'CTP Mocha'   },
+  { value: 'rose-pine',            label: 'Rose Pine'   },
+  { value: 'rose-pine-moon',       label: 'RP Moon'     },
+  { value: 'rose-pine-dawn',       label: 'RP Dawn'     },
+  { value: 'everforest',           label: 'Everforest'  },
+  { value: 'everforest-light',     label: 'Everforest L'},
+  { value: 'one-dark',             label: 'One Dark'    },
+  { value: 'cyberpunk',            label: 'Cyberpunk'   },
 ];
 
 let _selectedTheme = null;
-let _originalWallpaperIndex = -1;
 
 // ---- Open / Close ----
 function openCustomizeModal() {
   _selectedTheme = getStoredTheme();
-  _originalWallpaperIndex = getStoredWallpaperIndex();
   
   _renderCustomizeModal();
-  
-  // Hydrate wallpaper schedule cycles dropdown
-  document.getElementById('config-wallpaper-schedule').value = getStoredWallpaperSchedule();
-  
-  // Hydrate brightness range slider and live preview handlers
-  const brightness = getStoredWallpaperBrightness();
-  const brightnessInput = document.getElementById('config-wallpaper-brightness');
-  const brightnessDisplay = document.getElementById('brightness-value-display');
-  if (brightnessInput && brightnessDisplay) {
-    brightnessInput.value = brightness;
-    brightnessDisplay.textContent = `${brightness}%`;
-    
-    brightnessInput.oninput = () => {
-      brightnessDisplay.textContent = `${brightnessInput.value}%`;
-      _applyLiveBrightness(brightnessInput.value);
+
+  // Hydrate Bar rounding slider
+  const barRounding = getStoredBarRounding();
+  const barRoundingInput = document.getElementById('config-bar-rounding');
+  const barRoundingDisplay = document.getElementById('rounding-value-display');
+  if (barRoundingInput && barRoundingDisplay) {
+    barRoundingInput.value = barRounding;
+    barRoundingDisplay.textContent = `${barRounding}px`;
+    barRoundingInput.oninput = () => {
+      barRoundingDisplay.textContent = `${barRoundingInput.value}px`;
+      if (typeof applyBarRounding === 'function') {
+        applyBarRounding(barRoundingInput.value);
+      }
     };
   }
-  
-  updateWallpaperStatus();
 
+  // Hydrate Bar opacity slider
+  const barOpacity = getStoredBarOpacity();
+  const barOpacityInput = document.getElementById('config-bar-opacity');
+  const barOpacityDisplay = document.getElementById('bar-opacity-value-display');
+  if (barOpacityInput && barOpacityDisplay) {
+    barOpacityInput.value = barOpacity;
+    barOpacityDisplay.textContent = `${barOpacity}%`;
+    barOpacityInput.oninput = () => {
+      barOpacityDisplay.textContent = `${barOpacityInput.value}%`;
+      document.documentElement.style.setProperty('--bar-opacity-factor', Number(barOpacityInput.value) / 100);
+    };
+  }
+
+  // Hydrate Bar text opacity slider
+  const barTextOpacity = getStoredBarTextOpacity();
+  const textOpacityInput = document.getElementById('config-text-opacity');
+  const textOpacityDisplay = document.getElementById('text-opacity-value-display');
+  if (textOpacityInput && textOpacityDisplay) {
+    textOpacityInput.value = barTextOpacity;
+    textOpacityDisplay.textContent = `${barTextOpacity}%`;
+    textOpacityInput.oninput = () => {
+      textOpacityDisplay.textContent = `${textOpacityInput.value}%`;
+      document.documentElement.style.setProperty('--bar-text-opacity', Number(textOpacityInput.value) / 100);
+    };
+  }
+
+  // Hydrate Bar blur slider
+  const barBlur = getStoredBarBlur();
+  const barBlurInput = document.getElementById('config-bar-blur');
+  const barBlurDisplay = document.getElementById('bar-blur-value-display');
+  if (barBlurInput && barBlurDisplay) {
+    barBlurInput.value = barBlur;
+    barBlurDisplay.textContent = `${barBlur}px`;
+    barBlurInput.oninput = () => {
+      barBlurDisplay.textContent = `${barBlurInput.value}px`;
+      document.documentElement.style.setProperty('--bar-blur', `${barBlurInput.value}px`);
+    };
+  }
+
+  // Hydrate Bar invisible checkbox
+  const barInvisible = getStoredBarInvisible();
+  const barInvisibleInput = document.getElementById('config-bar-invisible');
+  if (barInvisibleInput) {
+    barInvisibleInput.checked = barInvisible;
+    barInvisibleInput.onchange = () => {
+      const bar = document.querySelector('.terminal-section');
+      const results = document.getElementById('live-results');
+      if (barInvisibleInput.checked) {
+        if (bar) bar.classList.add('bar-invisible');
+        if (results) results.classList.add('bar-invisible');
+      } else {
+        if (bar) bar.classList.remove('bar-invisible');
+        if (results) results.classList.remove('bar-invisible');
+      }
+    };
+  }
+
+  // Hydrate Bar text center checkbox
+  const barTextCenter = getStoredBarTextCenter();
+  const barTextCenterInput = document.getElementById('config-bar-text-center');
+  if (barTextCenterInput) {
+    barTextCenterInput.checked = barTextCenter;
+    barTextCenterInput.onchange = () => {
+      const content = document.querySelector('.content');
+      if (content) {
+        if (barTextCenterInput.checked) {
+          content.classList.add('text-center');
+        } else {
+          content.classList.remove('text-center');
+        }
+      }
+      if (typeof updateFocusIndicator === 'function') {
+        updateFocusIndicator();
+      }
+    };
+  }
+
+  // Hydrate Cursor block checkbox
+  const cursorBlock = getStoredCursorBlock();
+  const cursorBlockInput = document.getElementById('config-cursor-block');
+  if (cursorBlockInput) {
+    cursorBlockInput.checked = cursorBlock;
+    cursorBlockInput.onchange = () => {
+      if (typeof updateFocusIndicator === 'function') {
+        updateFocusIndicator();
+      }
+    };
+  }
+
+  // Hydrate Focus Underline dropdown mode
+  const focusIndicatorMode = getStoredFocusIndicatorMode();
+  const focusIndicatorSelect = document.getElementById('config-focus-indicator-mode');
+  if (focusIndicatorSelect) {
+    focusIndicatorSelect.value = focusIndicatorMode;
+    focusIndicatorSelect.onchange = () => {
+      // Re-trigger indicator update to preview styling changes live
+      if (typeof updateFocusIndicator === 'function') {
+        updateFocusIndicator();
+      }
+    };
+  }
+
+  // Hydrate layout and position controls
+  const mode = getStoredBarPositionMode();
+  const preset = getStoredBarPositionPreset();
+  const snapMode = getStoredBarSnapMode();
+  
+  _tempCustomX = Number(getStoredBarCustomX());
+  _tempCustomY = Number(getStoredBarCustomY());
+
+  const modeSelect = document.getElementById('config-bar-position-mode');
+  const presetSelect = document.getElementById('config-bar-position-preset');
+  const snapSelect = document.getElementById('config-bar-snap-mode');
+
+  if (modeSelect) modeSelect.value = mode;
+  if (presetSelect) presetSelect.value = preset;
+  if (snapSelect) snapSelect.value = snapMode;
+
+  const presetContainer = document.getElementById('bar-preset-selection-container');
+  const snapContainer = document.getElementById('bar-snap-selection-container');
+
+  const updatePositionUI = () => {
+    const activeMode = modeSelect.value;
+    if (activeMode === 'preset') {
+      if (presetContainer) presetContainer.classList.remove('hidden');
+      if (snapContainer) snapContainer.classList.add('hidden');
+      _applyLivePositionPreset(presetSelect.value);
+    } else {
+      if (presetContainer) presetContainer.classList.add('hidden');
+      if (snapContainer) snapContainer.classList.remove('hidden');
+      _applyLivePositionCustom(_tempCustomX, _tempCustomY);
+    }
+    _updateDragIndicator();
+  };
+
+  if (modeSelect) modeSelect.onchange = updatePositionUI;
+  if (presetSelect) {
+    presetSelect.onchange = () => {
+      _applyLivePositionPreset(presetSelect.value);
+    };
+  }
+
+  updatePositionUI();
+  
   if (typeof syncCustomDropdowns === 'function') {
     syncCustomDropdowns();
   }
 
   document.getElementById('customize-modal').classList.add('active');
+  _updateDragIndicator();
 }
 
 function closeCustomizeModal() {
   // Revert active settings in case they cancelled
   applyTheme(getStoredTheme());
-  applyWallpaperBrightness(getStoredWallpaperBrightness());
-  setWallpaperByIndex(_originalWallpaperIndex);
+  
+  // Revert bar layout settings
+  applyBarLayout();
+
+  const bar = document.querySelector('.terminal-section');
+  if (bar) bar.classList.remove('draggable-active', 'dragging');
   
   document.getElementById('customize-modal').classList.remove('active');
 }
@@ -86,127 +234,252 @@ function saveCustomize() {
     saveTheme(_selectedTheme);
     applyTheme(_selectedTheme);
   }
-  
-  const ws = document.getElementById('config-wallpaper-schedule').value;
-  const wb = document.getElementById('config-wallpaper-brightness').value;
-  
-  saveWallpaperSchedule(ws);
-  saveWallpaperBrightness(wb);
-  applyWallpaperBrightness(wb);
+
+  // Save Bar Material & Position Settings
+  const opacityVal = document.getElementById('config-bar-opacity').value;
+  const textOpacityVal = document.getElementById('config-text-opacity').value;
+  const textCenterVal = document.getElementById('config-bar-text-center').checked;
+  const blurVal = document.getElementById('config-bar-blur').value;
+  const invisibleVal = document.getElementById('config-bar-invisible').checked;
+  const focusIndicatorModeVal = document.getElementById('config-focus-indicator-mode').value;
+  const modeVal = document.getElementById('config-bar-position-mode').value;
+  const presetVal = document.getElementById('config-bar-position-preset').value;
+  const snapVal = document.getElementById('config-bar-snap-mode').value;
+  const cursorBlockVal = document.getElementById('config-cursor-block').checked;
+  const roundingVal = document.getElementById('config-bar-rounding').value;
+
+  saveBarOpacity(opacityVal);
+  saveBarTextOpacity(textOpacityVal);
+  saveBarTextCenter(textCenterVal);
+  saveBarBlur(blurVal);
+  saveBarInvisible(invisibleVal);
+  saveFocusIndicatorMode(focusIndicatorModeVal);
+  saveBarPositionMode(modeVal);
+  saveBarPositionPreset(presetVal);
+  saveBarSnapMode(snapVal);
+  saveCursorBlock(cursorBlockVal);
+  saveBarRounding(roundingVal);
+
+  if (modeVal === 'custom') {
+    saveBarCustomX(_tempCustomX);
+    saveBarCustomY(_tempCustomY);
+  }
+
+  applyBarLayout();
+
+  const bar = document.querySelector('.terminal-section');
+  if (bar) bar.classList.remove('draggable-active', 'dragging');
   
   document.getElementById('customize-modal').classList.remove('active');
   showToast('Appearance updated', 'success');
 }
 
-// ---- Wallpaper Configuration Helpers ----
 
-function _applyLiveBrightness(val) {
-  const opacity = (100 - Number(val)) / 100;
-  document.documentElement.style.setProperty('--wallpaper-overlay-opacity', opacity);
-}
 
-function updateWallpaperStatus() {
-  const status = document.getElementById('wallpaper-status');
-  if (!status || typeof getWallpaperSummary !== 'function') return;
+/* ========================================
+   Bar Material & Position Layout Handlers
+   ======================================== */
 
-  const summary = getWallpaperSummary();
-  if (summary.count === 0) {
-    status.textContent = 'No wallpapers added.';
-    renderWallpaperGallery();
-    return;
+let _isDragging = false;
+let _tempCustomX = 50;
+let _tempCustomY = 50;
+let _dragOffsetX = 0;
+let _dragOffsetY = 0;
+
+/**
+ * Reads all layout properties from storage and applies them to the document.
+ */
+function applyBarLayout() {
+  const mode = getStoredBarPositionMode();
+  const preset = getStoredBarPositionPreset();
+  const x = getStoredBarCustomX();
+  const y = getStoredBarCustomY();
+  const opacity = getStoredBarOpacity();
+  const textOpacity = getStoredBarTextOpacity();
+  const textCenter = getStoredBarTextCenter();
+  const blur = getStoredBarBlur();
+  const invisible = getStoredBarInvisible();
+  const rounding = getStoredBarRounding();
+
+  // 1. Apply opacity, blur and rounding to CSS variables
+  if (typeof applyBarRounding === 'function') {
+    applyBarRounding(rounding);
+  }
+  const opacityFactor = Number(opacity) / 100;
+  document.documentElement.style.setProperty('--bar-opacity-factor', opacityFactor);
+  document.documentElement.style.setProperty('--bar-text-opacity', Number(textOpacity) / 100);
+  document.documentElement.style.setProperty('--bar-blur', `${blur}px`);
+
+  // Toggle invisible bar class
+  const bar = document.querySelector('.terminal-section');
+  const results = document.getElementById('live-results');
+  if (bar) {
+    if (invisible) bar.classList.add('bar-invisible');
+    else bar.classList.remove('bar-invisible');
+  }
+  if (results) {
+    if (invisible) results.classList.add('bar-invisible');
+    else results.classList.remove('bar-invisible');
   }
 
-  const label = summary.count === 1 ? 'wallpaper' : 'wallpapers';
-  status.textContent = `${summary.count} ${label} added${summary.currentName ? ` - Current: ${summary.currentName}` : ''}.`;
-  renderWallpaperGallery();
-}
+  // 2. Apply position classes and inline styles to .content container
+  const content = document.querySelector('.content');
+  if (content) {
+    // Reset all position classes
+    const positionClasses = [
+      'position-preset-center', 'position-preset-top-center', 'position-preset-bottom-center',
+      'position-preset-left', 'position-preset-top-left', 'position-preset-bottom-left',
+      'position-preset-right', 'position-preset-top-right', 'position-preset-bottom-right',
+      'position-mode-custom'
+    ];
+    positionClasses.forEach(cls => content.classList.remove(cls));
 
-function renderWallpaperGallery() {
-  const gallery = document.getElementById('wallpaper-gallery');
-  if (!gallery) return;
+    if (mode === 'preset') {
+      content.classList.add(`position-preset-${preset}`);
+      document.documentElement.style.removeProperty('--bar-custom-x');
+      document.documentElement.style.removeProperty('--bar-custom-y');
+    } else {
+      content.classList.add('position-mode-custom');
+      document.documentElement.style.setProperty('--bar-custom-x', `${x}%`);
+      document.documentElement.style.setProperty('--bar-custom-y', `${y}%`);
+    }
 
-  const wallpapers = getStoredWallpapers();
-  const currentIndex = getStoredWallpaperIndex();
-  gallery.innerHTML = '';
-
-  if (wallpapers.length === 0) {
-    gallery.classList.add('empty');
-    return;
+    if (textCenter) {
+      content.classList.add('text-center');
+    } else {
+      content.classList.remove('text-center');
+    }
   }
 
-  gallery.classList.remove('empty');
-  wallpapers.forEach((wallpaper, index) => {
-    const tile = document.createElement('div');
-    tile.className = 'wallpaper-tile' + (index === currentIndex ? ' active' : '');
-
-    const preview = document.createElement('button');
-    preview.type = 'button';
-    preview.className = 'wallpaper-preview';
-    preview.title = wallpaper.name || 'Wallpaper';
-    preview.addEventListener('click', () => {
-      setWallpaperById(wallpaper.id);
-      updateWallpaperStatus();
-    });
-
-    const img = document.createElement('img');
-    img.src = wallpaper.src;
-    img.alt = wallpaper.name || 'Wallpaper';
-
-    const name = document.createElement('span');
-    name.className = 'wallpaper-name';
-    name.textContent = wallpaper.name || `Wallpaper ${index + 1}`;
-
-    const remove = document.createElement('button');
-    remove.type = 'button';
-    remove.className = 'wallpaper-remove';
-    remove.title = 'Remove wallpaper';
-    remove.textContent = 'x';
-    remove.addEventListener('click', () => {
-      removeWallpaperById(wallpaper.id);
-      updateWallpaperStatus();
-    });
-
-    preview.appendChild(img);
-    preview.appendChild(name);
-    tile.appendChild(preview);
-    tile.appendChild(remove);
-    gallery.appendChild(tile);
-  });
-}
-
-async function handleWallpaperUpload(e) {
-  try {
-    const added = await addWallpaperFiles(e.target.files);
-    if (added === 0) return;
-    e.target.value = '';
-    updateWallpaperStatus();
-    showToast(`${added} wallpaper${added === 1 ? '' : 's'} added`, 'success');
-  } catch {
-    showAlert('Only image files can be used as wallpapers.', { title: 'Wallpaper Import Failed' });
+  // 3. Update the focus indicator underline length
+  if (typeof updateFocusIndicator === 'function') {
+    updateFocusIndicator();
   }
 }
 
-async function handleClearWallpapers() {
-  const confirmed = await showConfirm('Remove all saved wallpapers?', {
-    title: 'Clear Wallpapers',
-    confirmLabel: 'Clear',
-    cancelLabel: 'Cancel'
-  });
-
-  if (!confirmed) return;
-
-  clearWallpapers();
-  updateWallpaperStatus();
-  showToast('Wallpapers cleared', 'success');
+function _applyLivePositionPreset(preset) {
+  const content = document.querySelector('.content');
+  if (!content) return;
+  
+  const positionClasses = [
+    'position-preset-center', 'position-preset-top-center', 'position-preset-bottom-center',
+    'position-preset-left', 'position-preset-top-left', 'position-preset-bottom-left',
+    'position-preset-right', 'position-preset-top-right', 'position-preset-bottom-right',
+    'position-mode-custom'
+  ];
+  positionClasses.forEach(cls => content.classList.remove(cls));
+  content.classList.add(`position-preset-${preset}`);
 }
 
-function handleNextWallpaper() {
-  const summary = getWallpaperSummary();
-  if (summary.count === 0) {
-    showToast('Add wallpapers first', 'info');
-    return;
-  }
+function _applyLivePositionCustom(x, y) {
+  const content = document.querySelector('.content');
+  if (!content) return;
+  
+  const positionClasses = [
+    'position-preset-center', 'position-preset-top-center', 'position-preset-bottom-center',
+    'position-preset-left', 'position-preset-top-left', 'position-preset-bottom-left',
+    'position-preset-right', 'position-preset-top-right', 'position-preset-bottom-right'
+  ];
+  positionClasses.forEach(cls => content.classList.remove(cls));
+  content.classList.add('position-mode-custom');
+  
+  document.documentElement.style.setProperty('--bar-custom-x', `${x}%`);
+  document.documentElement.style.setProperty('--bar-custom-y', `${y}%`);
+}
 
-  advanceWallpaper();
-  updateWallpaperStatus();
+function setupBarDragHandler() {
+  const bar = document.querySelector('.terminal-section');
+  if (!bar) return;
+
+  if (bar._dragListenersAttached) return;
+  bar._dragListenersAttached = true;
+
+  const onStart = (e) => {
+    // Only drag if custom mode is selected and customize modal is open
+    const mode = document.getElementById('config-bar-position-mode').value;
+    const isCustomizeActive = document.getElementById('customize-modal').classList.contains('active');
+    if (mode !== 'custom' || !isCustomizeActive) return;
+
+    const content = document.querySelector('.content');
+    if (content) {
+      const rect = content.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
+      const centerY = rect.top + rect.height / 2;
+      const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+      const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+      _dragOffsetX = clientX - centerX;
+      _dragOffsetY = clientY - centerY;
+    } else {
+      _dragOffsetX = 0;
+      _dragOffsetY = 0;
+    }
+
+    _isDragging = true;
+    document.body.classList.add('dragging-bar');
+    bar.classList.add('dragging');
+    e.preventDefault();
+  };
+
+  const onMove = (e) => {
+    if (!_isDragging) return;
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+    const targetCenterX = clientX - _dragOffsetX;
+    const targetCenterY = clientY - _dragOffsetY;
+
+    let xPct = (targetCenterX / window.innerWidth) * 100;
+    let yPct = (targetCenterY / window.innerHeight) * 100;
+
+    // Snapping options
+    const snapMode = document.getElementById('config-bar-snap-mode').value;
+    if (snapMode === 'grid-5') {
+      xPct = Math.round(xPct / 5) * 5;
+      yPct = Math.round(yPct / 5) * 5;
+    } else if (snapMode === 'grid-10') {
+      xPct = Math.round(xPct / 10) * 10;
+      yPct = Math.round(yPct / 10) * 10;
+    }
+
+    // Guard coordinates bounding box
+    xPct = Math.max(5, Math.min(95, xPct));
+    yPct = Math.max(5, Math.min(95, yPct));
+
+    _tempCustomX = xPct;
+    _tempCustomY = yPct;
+
+    _applyLivePositionCustom(xPct, yPct);
+  };
+
+  const onEnd = () => {
+    if (!_isDragging) return;
+    _isDragging = false;
+    document.body.classList.remove('dragging-bar');
+    bar.classList.remove('dragging');
+  };
+
+  // Mouse Listeners
+  bar.addEventListener('mousedown', onStart);
+  window.addEventListener('mousemove', onMove);
+  window.addEventListener('mouseup', onEnd);
+
+  // Touch Listeners
+  bar.addEventListener('touchstart', onStart, { passive: false });
+  window.addEventListener('touchmove', onMove, { passive: false });
+  window.addEventListener('touchend', onEnd);
+}
+
+function _updateDragIndicator() {
+  const modeSelect = document.getElementById('config-bar-position-mode');
+  const isCustomizeActive = document.getElementById('customize-modal').classList.contains('active');
+  const bar = document.querySelector('.terminal-section');
+  if (bar && modeSelect) {
+    const mode = modeSelect.value;
+    if (mode === 'custom' && isCustomizeActive) {
+      bar.classList.add('draggable-active');
+    } else {
+      bar.classList.remove('draggable-active');
+    }
+  }
 }

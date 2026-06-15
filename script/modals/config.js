@@ -16,21 +16,12 @@ function openConfig() {
   document.getElementById('config-enable-status-line').checked = getStoredEnableStatusLine();
   document.getElementById('config-enable-calculator').checked = getStoredEnableInlineCalculator();
   document.getElementById('config-enable-autofocus').checked = getStoredEnableAutofocus();
-  
-  const rounding = getStoredBarRounding();
-  const roundingInput = document.getElementById('config-bar-rounding');
-  const roundingDisplay = document.getElementById('rounding-value-display');
-  if (roundingInput && roundingDisplay) {
-    roundingInput.value = rounding;
-    roundingDisplay.textContent = `${rounding}px`;
-    
-    // Live preview
-    roundingInput.oninput = () => {
-      roundingDisplay.textContent = `${roundingInput.value}px`;
-      _applyLiveRounding(roundingInput.value);
-    };
-  }
+  document.getElementById('config-time-24h').checked = getStoredTime24h();
 
+  document.getElementById('config-status-show-day').checked = getStoredStatusShowDay();
+  document.getElementById('config-status-show-month').checked = getStoredStatusShowMonth();
+  document.getElementById('config-status-show-date').checked = getStoredStatusShowDate();
+  
   if (typeof syncCustomDropdowns === 'function') {
     syncCustomDropdowns();
   }
@@ -40,8 +31,6 @@ function openConfig() {
 
 function closeConfig() {
   document.getElementById('config-modal').classList.remove('active');
-  // Re-apply stored settings in case they cancelled
-  applyBarRounding(getStoredBarRounding());
   if (typeof window.setTerminalDormant === 'function') window.setTerminalDormant();
 }
 
@@ -52,7 +41,6 @@ function saveConfig() {
   const l = document.getElementById('config-font-url').value.trim();
   const kc = document.getElementById('config-key-close').value.trim().toLowerCase();
   const kn = document.getElementById('config-key-new').value.trim().toLowerCase();
-  const r = document.getElementById('config-bar-rounding').value;
   
   const eh = document.getElementById('config-enable-hint').checked;
   const ed = document.getElementById('config-enable-dropdown').checked;
@@ -60,6 +48,11 @@ function saveConfig() {
   const esl = document.getElementById('config-enable-status-line').checked;
   const ec = document.getElementById('config-enable-calculator').checked;
   const eaf = document.getElementById('config-enable-autofocus').checked;
+  const t24 = document.getElementById('config-time-24h').checked;
+
+  const showDay = document.getElementById('config-status-show-day').checked;
+  const showMonth = document.getElementById('config-status-show-month').checked;
+  const showDate = document.getElementById('config-status-show-date').checked;
   
   if (u) saveUsername(u);
   saveSearchEngine(e);
@@ -67,21 +60,26 @@ function saveConfig() {
   saveFontUrl(l);
   if (kc) saveKeyCloseTab(kc);
   if (kn) saveKeyNewTab(kn);
-  saveBarRounding(r);
   saveEnableAutocompleteHint(eh);
   saveEnableSuggestionDropdown(ed);
   saveEnableDropdownNavigation(edn);
   saveEnableStatusLine(esl);
   saveEnableInlineCalculator(ec);
   saveEnableAutofocus(eaf);
+  saveTime24h(t24);
+  saveStatusShowDay(showDay);
+  saveStatusShowMonth(showMonth);
+  saveStatusShowDate(showDate);
 
   // Trigger immediate visibility update for the clock greeting line
   if (typeof updateStatusLineVisibility === 'function') {
     updateStatusLineVisibility();
   }
+  if (typeof updateStatusText === 'function') {
+    updateStatusText();
+  }
   
   applyUserFont(f, l);
-  applyBarRounding(r);
   
   // Re-run updates immediately
   const inputEl = document.getElementById('terminal-input');
@@ -91,8 +89,4 @@ function saveConfig() {
   
   closeConfig();
   showToast('Settings Saved', 'success');
-}
-
-function _applyLiveRounding(val) {
-  document.documentElement.style.setProperty('--bar-rounding', `${val}px`);
 }

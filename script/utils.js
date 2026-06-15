@@ -13,7 +13,9 @@ const HANDLED_INTERNALLY = Symbol('handled');
  */
 const THEMES = [
     'light', 'dark', 'black', 'nord', 'gruvbox', 'tokyo-night', 'dracula', 'kanagawa',
-    'catppuccin-frappe', 'catppuccin-macchiato', 'catppuccin-mocha'
+    'catppuccin-frappe', 'catppuccin-macchiato', 'catppuccin-mocha',
+    'rose-pine', 'rose-pine-moon', 'rose-pine-dawn', 'everforest', 'everforest-light',
+    'one-dark', 'cyberpunk'
 ];
 
 /**

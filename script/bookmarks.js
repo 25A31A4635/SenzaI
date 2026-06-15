@@ -114,8 +114,12 @@ async function _probeSequential(sources) {
 async function _loadFavicon(displayImg, domain, sources) {
   if (domain in _faviconMemCache) {
     const cached = _faviconMemCache[domain];
-    if (cached) displayImg.src = cached;
-    else        displayImg.style.display = 'none';
+    if (cached) {
+      displayImg.src = cached;
+      displayImg.style.display = 'block';
+    } else {
+      displayImg.style.display = 'none';
+    }
     return;
   }
 
@@ -128,8 +132,12 @@ async function _loadFavicon(displayImg, domain, sources) {
   _faviconMemCache[domain] = winner;
   _persistFaviconCache();
 
-  if (winner) displayImg.src = winner;
-  else        displayImg.style.display = 'none';
+  if (winner) {
+    displayImg.src = winner;
+    displayImg.style.display = 'block';
+  } else {
+    displayImg.style.display = 'none';
+  }
 }
 
 function getFilteredBookmarks(rawValue) {
@@ -151,6 +159,17 @@ function getFilteredBookmarks(rawValue) {
 }
 
 // ---- Live Results Rendering ----
+function getNativeFaviconUrl(url) {
+  try {
+    const u = new URL(url);
+    if (typeof chrome !== 'undefined' && chrome.runtime && chrome.runtime.getURL) {
+      // Chrome extension native favicon utility
+      return `chrome-extension://${chrome.runtime.id}/_favicon/?pageUrl=${encodeURIComponent(u.origin)}&size=32`;
+    }
+  } catch (e) {}
+  return null;
+}
+
 function renderLiveResults(rawValue) {
   const container = document.getElementById('live-results');
   if (!container) return;
@@ -173,17 +192,36 @@ function renderLiveResults(rawValue) {
   const isVisible = container.classList.contains('visible');
   const prevHeight = isVisible ? container.getBoundingClientRect().height : 0;
 
-  container.innerHTML = filtered.map(bm => {
+  container.innerHTML = filtered.map((bm, idx) => {
     let domain = '';
     try { domain = new URL(bm.href).hostname; } catch {}
     return `
       <a href="${bm.href}" class="live-result-item">
+        <img class="result-favicon" id="favicon-${idx}" src="" alt="" style="width: 16px; height: 16px; margin-right: 10px; border-radius: 4px; object-fit: contain; flex-shrink: 0; display: none;" />
         <span class="result-type">${bm.type}</span>
         <span class="result-title">${escapeHTML(bm.title)}</span>
         <span class="result-domain">${escapeHTML(domain)}</span>
       </a>
     `;
   }).join('');
+
+  // Hydrate favicons asynchronously
+  filtered.forEach((bm, idx) => {
+    const img = document.getElementById(`favicon-${idx}`);
+    if (!img) return;
+
+    let domain = '';
+    try { domain = new URL(bm.href).hostname; } catch {}
+
+    const nativeUrl = getNativeFaviconUrl(bm.href);
+    if (nativeUrl) {
+      img.src = nativeUrl;
+      img.style.display = 'block';
+    } else {
+      const sources = _buildSources(domain);
+      _loadFavicon(img, domain, sources);
+    }
+  });
   
   container.classList.add('visible');
 

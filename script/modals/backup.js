@@ -7,23 +7,36 @@ const BACKUP_KEYS = [
   'theme',
   'searchEngine',
   'bookmarks',
+  'shelfBookmarks',
   'syntaxColors',
   'fontFamily',
   'fontUrl',
   'keyCloseTab',
   'keyNewTab',
   'barRounding',
-  'wallpaperBrightness',
   'enableAutocompleteHint',
   'enableSuggestionDropdown',
   'enableDropdownNavigation',
   'enableStatusLine',
   'enableInlineCalculator',
+  'enableAutofocus',
   'customSearchEngines',
-  'wallpapers',
-  'wallpaperSchedule',
-  'wallpaperIndex',
-  'wallpaperCycleBucket'
+  'barOpacity',
+  'barTextOpacity',
+  'barTextCenter',
+  'barBlur',
+  'barInvisible',
+  'focusIndicatorMode',
+  'barPositionMode',
+  'barPositionPreset',
+  'barCustomX',
+  'barCustomY',
+  'barSnapMode',
+  'cursorBlock',
+  'time24h',
+  'statusShowDay',
+  'statusShowMonth',
+  'statusShowDate'
 ];
 
 function exportBackup() {
@@ -34,12 +47,7 @@ function exportBackup() {
   };
 
   BACKUP_KEYS.forEach(key => {
-    let val = null;
-    if (key === 'wallpapers' && typeof getStoredWallpapers === 'function') {
-      val = JSON.stringify(getStoredWallpapers());
-    } else {
-      val = localStorage.getItem(key);
-    }
+    const val = localStorage.getItem(key);
 
     if (val !== null) {
       try {
@@ -87,26 +95,15 @@ function importBackup() {
 
         if (!confirmed) return;
 
-        const extData = {};
         BACKUP_KEYS.forEach(key => {
           if (data[key] !== undefined) {
             const val = typeof data[key] === 'object' ? JSON.stringify(data[key]) : data[key];
             localStorage.setItem(key, val);
-            if (key === 'wallpapers') {
-              extData[key] = data[key];
-            }
           }
         });
 
-        if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
-          chrome.storage.local.set(extData, () => {
-            showToast('Restoring setup...', 'info');
-            setTimeout(() => location.reload(), 1000);
-          });
-        } else {
-          showToast('Restoring setup...', 'info');
-          setTimeout(() => location.reload(), 1000);
-        }
+        showToast('Restoring setup...', 'info');
+        setTimeout(() => location.reload(), 1000);
 
       } catch (err) {
         showAlert('Invalid SenzaI backup file.', { title: 'Import Failed' });
@@ -116,4 +113,19 @@ function importBackup() {
   });
 
   input.click();
+}
+
+async function resetToDefaults() {
+  const confirmed = await showConfirm('Are you sure you want to restore all settings to default? This will clear all your custom layouts, themes, bookmarks, and configuration.', {
+    title: 'Restore Defaults',
+    confirmLabel: 'Restore Defaults',
+    cancelLabel: 'Cancel'
+  });
+
+  if (!confirmed) return;
+
+  // Clear localStorage
+  localStorage.clear();
+  showToast('Restoring default settings...', 'info');
+  setTimeout(() => location.reload(), 1000);
 }

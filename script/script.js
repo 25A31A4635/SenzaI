@@ -53,10 +53,7 @@ function applyBarRounding(val) {
   document.documentElement.style.setProperty('--bar-rounding', `${val}px`);
 }
 
-function applyWallpaperBrightness(val) {
-  const opacity = (100 - Number(val)) / 100;
-  document.documentElement.style.setProperty('--wallpaper-overlay-opacity', opacity);
-}
+
 
 /* --- Global Activation & Key Handling --- */
 
@@ -108,12 +105,46 @@ function applyWallpaperBrightness(val) {
     if (!statusEl) return;
     
     const now = new Date();
-    let hours = now.getHours();
     const minutes = String(now.getMinutes()).padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    hours = hours % 12;
-    hours = hours ? hours : 12; 
-    const timeStr = `${hours}:${minutes} ${ampm}`;
+    
+    const use24h = (typeof getStoredTime24h === 'function') ? getStoredTime24h() : false;
+    let timeStr;
+    if (use24h) {
+      const hoursStr = String(now.getHours()).padStart(2, '0');
+      timeStr = `${hoursStr}:${minutes}`;
+    } else {
+      let hours = now.getHours();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      timeStr = `${hours}:${minutes} ${ampm}`;
+    }
+    
+    const showDay = (typeof getStoredStatusShowDay === 'function') ? getStoredStatusShowDay() : true;
+    const showMonth = (typeof getStoredStatusShowMonth === 'function') ? getStoredStatusShowMonth() : true;
+    const showDate = (typeof getStoredStatusShowDate === 'function') ? getStoredStatusShowDate() : true;
+    
+    let dateParts = [];
+    if (showDay) {
+      const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+      dateParts.push(days[now.getDay()]);
+    }
+    
+    let monthDayParts = [];
+    if (showMonth) {
+      const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+      monthDayParts.push(months[now.getMonth()]);
+    }
+    if (showDate) {
+      monthDayParts.push(now.getDate());
+    }
+    
+    if (monthDayParts.length > 0) {
+      dateParts.push(monthDayParts.join(' '));
+    }
+    
+    const dateStr = dateParts.join(', ');
+    const dateTimeStr = dateStr ? `${dateStr}, ${timeStr}` : timeStr;
     
     const currentHour = now.getHours();
     let greeting = 'Hello';
@@ -125,8 +156,8 @@ function applyWallpaperBrightness(val) {
       greeting = 'Good evening';
     }
     
-    const username = (typeof getStoredUsername === 'function') ? getStoredUsername() : 'Abhidatta Benda';
-    statusEl.textContent = `${greeting}, ${username}. It's ${timeStr}.`;
+    const username = (typeof getStoredUsername === 'function') ? getStoredUsername() : 'user';
+    statusEl.textContent = `${greeting}, ${username}. It's ${dateTimeStr}.`;
   }
 
   window.setTerminalDormant = deactivate;
@@ -237,18 +268,19 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Wait for async storage shim if present
   if (window.extStorageReady) await window.extStorageReady;
   
-  // Load wallpapers from local extension storage cache
-  if (typeof loadWallpapersCache === 'function') {
-    await loadWallpapersCache();
-  }
-  
   // Load user settings
   applyUserFont(getStoredFontFamily(), getStoredFontUrl());
   applyBarRounding(getStoredBarRounding());
-  applyWallpaperBrightness(getStoredWallpaperBrightness());
   loadTheme();
   applySyntaxColors(getStoredSyntaxColors());
-  applyScheduledWallpaper();
+  
+  // Apply bar material styling and position layout
+  if (typeof applyBarLayout === 'function') {
+    applyBarLayout();
+  }
+  if (typeof setupBarDragHandler === 'function') {
+    setupBarDragHandler();
+  }
   
   // Start the terminal logic
   initializeTerminal();

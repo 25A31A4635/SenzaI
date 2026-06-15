@@ -14,14 +14,11 @@ document.addEventListener('DOMContentLoaded', () => {
   on('btn-customize-from-config', () => { closeConfig(); openCustomizeModal(); });
   on('btn-import-backup',      () => importBackup());
   on('btn-export-backup',      () => exportBackup());
+  on('btn-reset-defaults',     () => resetToDefaults());
 
   // --- Config Modal ---
   on('btn-cancel-config',      () => closeConfig());
   on('btn-save-config',        () => saveConfig());
-  const wallpaperInput = document.getElementById('config-wallpaper-files');
-  if (wallpaperInput) wallpaperInput.addEventListener('change', handleWallpaperUpload);
-  on('btn-next-wallpaper',    () => handleNextWallpaper());
-  on('btn-clear-wallpapers',   () => handleClearWallpapers());
 
   // --- Help Modal ---
   on('btn-close-help',         () => closeHelp());

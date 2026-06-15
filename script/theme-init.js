@@ -1,4 +1,10 @@
-(function redirectWithThemeShell() {
+/**
+ * SenzaI - Early Theme Initialization
+ * Loads the theme from localStorage and applies it to the document element
+ * immediately to prevent a flash of light/dark theme during loading.
+ * Separated into an external file to comply with MV3 CSP regulations.
+ */
+(function() {
   try {
     const theme = localStorage.getItem('theme') || 'dark';
     const backgroundByTheme = {
@@ -26,17 +32,8 @@
       'catppuccin-frappe', 'catppuccin-macchiato', 'catppuccin-mocha',
       'rose-pine', 'rose-pine-moon', 'everforest', 'one-dark', 'cyberpunk'
     ]);
-
     document.documentElement.style.backgroundColor = backgroundByTheme[theme] || '#2d3436';
     document.documentElement.style.colorScheme = darkThemes.has(theme) ? 'dark' : 'light';
+    document.documentElement.classList.add(theme + '-mode');
   } catch (e) {}
-
-  // Use absolute extension URL so it resolves correctly regardless of folder depth
-  const root = (typeof chrome !== 'undefined' && chrome.runtime)
-    ? chrome.runtime.getURL('index.html')
-    : (typeof browser !== 'undefined' && browser.runtime)
-      ? browser.runtime.getURL('index.html')
-      : '../index.html'; // localhost fallback
-
-  window.location.replace(root);
 })();
