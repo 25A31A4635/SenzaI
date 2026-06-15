@@ -7,7 +7,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "senzai@abhidatta.benda",
-      "strict_min_version": "100.0"
+      "strict_min_version": "100.0",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
   "chrome_url_overrides": {
