@@ -181,3 +181,77 @@ function saveStatusShowMonth(val) { localStorage.setItem('statusShowMonth', Stri
 function getStoredStatusShowDate() { return localStorage.getItem('statusShowDate') !== 'false'; }
 function saveStatusShowDate(val) { localStorage.setItem('statusShowDate', String(val)); }
 
+/* --- Wallpaper Settings --- */
+function getStoredWallpaperMode() { return localStorage.getItem('wallpaperMode') || 'none'; }
+function saveWallpaperMode(val) { localStorage.setItem('wallpaperMode', val); }
+
+function getStoredWallpaperUrl() { return localStorage.getItem('wallpaperUrl') || ''; }
+function saveWallpaperUrl(val) { localStorage.setItem('wallpaperUrl', val); }
+
+function getStoredWallpaperBlur() { return localStorage.getItem('wallpaperBlur') || '0'; }
+function saveWallpaperBlur(val) { localStorage.setItem('wallpaperBlur', String(val)); }
+
+function getStoredWallpaperBrightness() { return localStorage.getItem('wallpaperBrightness') || '100'; }
+function saveWallpaperBrightness(val) { localStorage.setItem('wallpaperBrightness', String(val)); }
+
+/**
+ * Applies wallpaper from user settings to the overlay layout element.
+ */
+function applyWallpaper() {
+  const overlay = document.getElementById('wallpaper-overlay');
+  if (!overlay) return;
+
+  const mode = getStoredWallpaperMode();
+  const blur = getStoredWallpaperBlur();
+  const brightness = getStoredWallpaperBrightness();
+  
+  // Set custom CSS variables for live update performance
+  document.documentElement.style.setProperty('--wallpaper-blur', `${blur}px`);
+  document.documentElement.style.setProperty('--wallpaper-brightness', Number(brightness) / 100);
+
+  if (mode === 'none') {
+    overlay.classList.remove('loaded');
+    overlay.style.backgroundImage = '';
+    return;
+  }
+
+  let url = '';
+  if (mode === 'custom') {
+    url = getStoredWallpaperUrl();
+  } else {
+    const now = new Date();
+    const YYYY = now.getFullYear();
+    const MM = String(now.getMonth() + 1).padStart(2, '0');
+    const DD = String(now.getDate()).padStart(2, '0');
+    
+    if (mode === 'daily') {
+      url = `https://picsum.photos/seed/senzai-daily-${YYYY}-${MM}-${DD}/1920/1080`;
+    } else if (mode === 'hourly') {
+      const HH = String(now.getHours()).padStart(2, '0');
+      url = `https://picsum.photos/seed/senzai-hourly-${YYYY}-${MM}-${DD}-${HH}/1920/1080`;
+    } else if (mode === 'random') {
+      if (!window._sessionRandomSeed) {
+        window._sessionRandomSeed = Math.floor(Math.random() * 1000000);
+      }
+      url = `https://picsum.photos/seed/senzai-random-${window._sessionRandomSeed}/1920/1080`;
+    }
+  }
+
+  if (!url) {
+    overlay.classList.remove('loaded');
+    overlay.style.backgroundImage = '';
+    return;
+  }
+
+  // Preload wallpaper image to prevent blank/flickering visuals
+  const img = new Image();
+  img.src = url;
+  img.onload = () => {
+    overlay.style.backgroundImage = `url('${url}')`;
+    overlay.classList.add('loaded');
+  };
+  img.onerror = () => {
+    overlay.classList.remove('loaded');
+  };
+}
+

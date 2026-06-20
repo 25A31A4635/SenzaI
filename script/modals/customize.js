@@ -184,6 +184,65 @@ function openCustomizeModal() {
   }
 
   updatePositionUI();
+
+  // Hydrate wallpaper controls
+  const wpMode = getStoredWallpaperMode();
+  const wpUrl = getStoredWallpaperUrl();
+  const wpBlur = getStoredWallpaperBlur();
+  const wpBrightness = getStoredWallpaperBrightness();
+
+  const wpModeSelect = document.getElementById('config-wallpaper-mode');
+  const wpUrlInput = document.getElementById('config-wallpaper-url');
+  const wpBlurInput = document.getElementById('config-wallpaper-blur');
+  const wpBrightnessInput = document.getElementById('config-wallpaper-brightness');
+
+  const wpUrlContainer = document.getElementById('wallpaper-url-container');
+  const wpBlurDisplay = document.getElementById('wallpaper-blur-display');
+  const wpBrightnessDisplay = document.getElementById('wallpaper-brightness-display');
+
+  if (wpModeSelect) wpModeSelect.value = wpMode;
+  if (wpUrlInput) wpUrlInput.value = wpUrl;
+  if (wpBlurInput) wpBlurInput.value = wpBlur;
+  if (wpBrightnessInput) wpBrightnessInput.value = wpBrightness;
+
+  if (wpBlurDisplay) wpBlurDisplay.textContent = `${wpBlur}px`;
+  if (wpBrightnessDisplay) wpBrightnessDisplay.textContent = `${wpBrightness}%`;
+
+  const toggleWpUrlVisibility = () => {
+    if (wpModeSelect.value === 'custom') {
+      wpUrlContainer.classList.remove('hidden');
+    } else {
+      wpUrlContainer.classList.add('hidden');
+    }
+  };
+
+  if (wpModeSelect) {
+    wpModeSelect.onchange = () => {
+      toggleWpUrlVisibility();
+      _applyLiveWallpaperPreview();
+    };
+    toggleWpUrlVisibility();
+  }
+
+  if (wpUrlInput) {
+    wpUrlInput.oninput = () => {
+      _applyLiveWallpaperPreview();
+    };
+  }
+
+  if (wpBlurInput) {
+    wpBlurInput.oninput = () => {
+      wpBlurDisplay.textContent = `${wpBlurInput.value}px`;
+      document.documentElement.style.setProperty('--wallpaper-blur', `${wpBlurInput.value}px`);
+    };
+  }
+
+  if (wpBrightnessInput) {
+    wpBrightnessInput.oninput = () => {
+      wpBrightnessDisplay.textContent = `${wpBrightnessInput.value}%`;
+      document.documentElement.style.setProperty('--wallpaper-brightness', Number(wpBrightnessInput.value) / 100);
+    };
+  }
   
   if (typeof syncCustomDropdowns === 'function') {
     syncCustomDropdowns();
@@ -199,6 +258,11 @@ function closeCustomizeModal() {
   
   // Revert bar layout settings
   applyBarLayout();
+
+  // Revert wallpaper settings
+  if (typeof applyWallpaper === 'function') {
+    applyWallpaper();
+  }
 
   const bar = document.querySelector('.terminal-section');
   if (bar) bar.classList.remove('draggable-active', 'dragging');
@@ -260,6 +324,21 @@ function saveCustomize() {
   if (modeVal === 'custom') {
     saveBarCustomX(_tempCustomX);
     saveBarCustomY(_tempCustomY);
+  }
+
+  // Save Wallpaper Settings
+  const wpModeVal = document.getElementById('config-wallpaper-mode').value;
+  const wpUrlVal = document.getElementById('config-wallpaper-url').value.trim();
+  const wpBlurVal = document.getElementById('config-wallpaper-blur').value;
+  const wpBrightnessVal = document.getElementById('config-wallpaper-brightness').value;
+
+  saveWallpaperMode(wpModeVal);
+  saveWallpaperUrl(wpUrlVal);
+  saveWallpaperBlur(wpBlurVal);
+  saveWallpaperBrightness(wpBrightnessVal);
+
+  if (typeof applyWallpaper === 'function') {
+    applyWallpaper();
   }
 
   applyBarLayout();
@@ -474,4 +553,63 @@ function _updateDragIndicator() {
       bar.classList.remove('draggable-active');
     }
   }
+}
+
+/**
+ * Live preview of the wallpaper during customization changes.
+ */
+function _applyLiveWallpaperPreview() {
+  const modeSelect = document.getElementById('config-wallpaper-mode');
+  const urlInput = document.getElementById('config-wallpaper-url');
+  if (!modeSelect) return;
+
+  const mode = modeSelect.value;
+  const urlVal = urlInput ? urlInput.value.trim() : '';
+
+  const overlay = document.getElementById('wallpaper-overlay');
+  if (!overlay) return;
+
+  if (mode === 'none') {
+    overlay.classList.remove('loaded');
+    overlay.style.backgroundImage = '';
+    return;
+  }
+
+  let url = '';
+  if (mode === 'custom') {
+    url = urlVal;
+  } else {
+    const now = new Date();
+    const YYYY = now.getFullYear();
+    const MM = String(now.getMonth() + 1).padStart(2, '0');
+    const DD = String(now.getDate()).padStart(2, '0');
+    
+    if (mode === 'daily') {
+      url = `https://picsum.photos/seed/senzai-daily-${YYYY}-${MM}-${DD}/1920/1080`;
+    } else if (mode === 'hourly') {
+      const HH = String(now.getHours()).padStart(2, '0');
+      url = `https://picsum.photos/seed/senzai-hourly-${YYYY}-${MM}-${DD}-${HH}/1920/1080`;
+    } else if (mode === 'random') {
+      if (!window._sessionRandomSeed) {
+        window._sessionRandomSeed = Math.floor(Math.random() * 1000000);
+      }
+      url = `https://picsum.photos/seed/senzai-random-${window._sessionRandomSeed}/1920/1080`;
+    }
+  }
+
+  if (!url) {
+    overlay.classList.remove('loaded');
+    overlay.style.backgroundImage = '';
+    return;
+  }
+
+  const img = new Image();
+  img.src = url;
+  img.onload = () => {
+    overlay.style.backgroundImage = `url('${url}')`;
+    overlay.classList.add('loaded');
+  };
+  img.onerror = () => {
+    overlay.classList.remove('loaded');
+  };
 }

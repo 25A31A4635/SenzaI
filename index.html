@@ -26,6 +26,8 @@
     </div>
   </noscript>
 
+  <div id="wallpaper-overlay" class="wallpaper-overlay"></div>
+
   <div class="content">
     <section class="terminal-section">
       <div class="terminal-input-wrapper">
@@ -388,6 +390,44 @@
               <option value="grid-10">Grid Snap (10%)</option>
             </select>
             <p class="drag-helper-text" id="drag-helper-text">Drag the search bar around the screen to position it.</p>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 4. Wallpaper Settings -->
+      <div class="config-section">
+        <h3>Wallpaper</h3>
+        <div class="config-group gap-lg">
+          <div class="config-group">
+            <label for="config-wallpaper-mode" class="config-hint">Wallpaper Source</label>
+            <select id="config-wallpaper-mode">
+              <option value="none">None (Solid Color)</option>
+              <option value="custom">Custom URL</option>
+              <option value="daily">Daily Curated</option>
+              <option value="hourly">Hourly Curated</option>
+              <option value="random">New Tab Random</option>
+            </select>
+          </div>
+          
+          <div id="wallpaper-url-container" class="config-group hidden">
+            <label for="config-wallpaper-url" class="config-hint">Wallpaper URL</label>
+            <input type="text" id="config-wallpaper-url" placeholder="https://images.unsplash.com/..." spellcheck="false" />
+          </div>
+
+          <div>
+            <p class="config-hint">Wallpaper Blur</p>
+            <div class="flex flex-center gap-lg">
+              <input type="range" id="config-wallpaper-blur" min="0" max="30" step="1" />
+              <span id="wallpaper-blur-display" class="value-display">0px</span>
+            </div>
+          </div>
+
+          <div>
+            <p class="config-hint">Wallpaper Brightness</p>
+            <div class="flex flex-center gap-lg">
+              <input type="range" id="config-wallpaper-brightness" min="10" max="100" step="5" />
+              <span id="wallpaper-brightness-display" class="value-display">100%</span>
+            </div>
           </div>
         </div>
       </div>

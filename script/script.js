@@ -281,6 +281,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (typeof setupBarDragHandler === 'function') {
     setupBarDragHandler();
   }
+  if (typeof applyWallpaper === 'function') {
+    applyWallpaper();
+  }
   
   // Start the terminal logic
   initializeTerminal();
