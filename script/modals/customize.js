@@ -208,25 +208,77 @@ function openCustomizeModal() {
   if (wpBlurDisplay) wpBlurDisplay.textContent = `${wpBlur}px`;
   if (wpBrightnessDisplay) wpBrightnessDisplay.textContent = `${wpBrightness}%`;
 
-  const toggleWpUrlVisibility = () => {
-    if (wpModeSelect.value === 'custom') {
+  const wpRotationSelect = document.getElementById('config-wallpaper-rotation');
+  const wpListContainer = document.getElementById('wallpaper-list-container');
+  
+  if (wpRotationSelect) {
+    wpRotationSelect.value = getStoredWallpaperRotation();
+    wpRotationSelect.onchange = () => {
+      _applyLiveWallpaperPreview();
+    };
+  }
+
+  const toggleWpVisibility = () => {
+    const mode = wpModeSelect.value;
+    if (mode === 'custom') {
       wpUrlContainer.classList.remove('hidden');
+      wpListContainer.classList.add('hidden');
+    } else if (mode === 'custom_list') {
+      wpUrlContainer.classList.add('hidden');
+      wpListContainer.classList.remove('hidden');
+      _renderCustomWallpapersList();
     } else {
       wpUrlContainer.classList.add('hidden');
+      wpListContainer.classList.add('hidden');
     }
   };
 
   if (wpModeSelect) {
     wpModeSelect.onchange = () => {
-      toggleWpUrlVisibility();
+      toggleWpVisibility();
       _applyLiveWallpaperPreview();
     };
-    toggleWpUrlVisibility();
+    toggleWpVisibility();
   }
 
   if (wpUrlInput) {
     wpUrlInput.oninput = () => {
       _applyLiveWallpaperPreview();
+    };
+  }
+
+  // Handle adding custom wallpaper URL
+  const addUrlBtn = document.getElementById('btn-add-wallpaper-url');
+  const urlInput = document.getElementById('input-wallpaper-url');
+  if (addUrlBtn && urlInput) {
+    addUrlBtn.onclick = async () => {
+      const url = urlInput.value.trim();
+      if (!url) return;
+      await addWallpaper('url', url, url.substring(url.lastIndexOf('/') + 1) || 'Image');
+      urlInput.value = '';
+      _renderCustomWallpapersList();
+      _applyLiveWallpaperPreview();
+    };
+  }
+
+  // Handle uploading local file
+  const uploadBtn = document.getElementById('btn-upload-wallpaper');
+  const fileInput = document.getElementById('input-upload-wallpaper');
+  if (uploadBtn && fileInput) {
+    uploadBtn.onclick = () => fileInput.click();
+    fileInput.onchange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      
+      const reader = new FileReader();
+      reader.onload = async (event) => {
+        const base64Data = event.target.result;
+        await addWallpaper('file', base64Data, file.name);
+        fileInput.value = ''; // Reset file input
+        _renderCustomWallpapersList();
+        _applyLiveWallpaperPreview();
+      };
+      reader.readAsDataURL(file);
     };
   }
 
@@ -331,11 +383,13 @@ function saveCustomize() {
   const wpUrlVal = document.getElementById('config-wallpaper-url').value.trim();
   const wpBlurVal = document.getElementById('config-wallpaper-blur').value;
   const wpBrightnessVal = document.getElementById('config-wallpaper-brightness').value;
+  const wpRotationVal = document.getElementById('config-wallpaper-rotation').value;
 
   saveWallpaperMode(wpModeVal);
   saveWallpaperUrl(wpUrlVal);
   saveWallpaperBlur(wpBlurVal);
   saveWallpaperBrightness(wpBrightnessVal);
+  saveWallpaperRotation(wpRotationVal);
 
   if (typeof applyWallpaper === 'function') {
     applyWallpaper();
@@ -558,7 +612,7 @@ function _updateDragIndicator() {
 /**
  * Live preview of the wallpaper during customization changes.
  */
-function _applyLiveWallpaperPreview() {
+async function _applyLiveWallpaperPreview() {
   const modeSelect = document.getElementById('config-wallpaper-mode');
   const urlInput = document.getElementById('config-wallpaper-url');
   if (!modeSelect) return;
@@ -578,6 +632,30 @@ function _applyLiveWallpaperPreview() {
   let url = '';
   if (mode === 'custom') {
     url = urlVal;
+  } else if (mode === 'custom_list') {
+    const list = await getAllWallpapers();
+    if (list.length === 0) {
+      overlay.classList.remove('loaded');
+      overlay.style.backgroundImage = '';
+      return;
+    }
+    const rotationSelect = document.getElementById('config-wallpaper-rotation');
+    const rotation = rotationSelect ? rotationSelect.value : 'random';
+    let idx = 0;
+    if (rotation === 'random') {
+      if (!window._sessionRandomSeed) {
+        window._sessionRandomSeed = Math.floor(Math.random() * 1000000);
+      }
+      idx = window._sessionRandomSeed % list.length;
+    } else if (rotation === 'daily') {
+      idx = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % list.length;
+    } else if (rotation === 'hourly') {
+      idx = Math.floor(Date.now() / (1000 * 60 * 60)) % list.length;
+    }
+    
+    if (list[idx]) {
+      url = list[idx].data;
+    }
   } else {
     const now = new Date();
     const YYYY = now.getFullYear();
@@ -612,4 +690,41 @@ function _applyLiveWallpaperPreview() {
   img.onerror = () => {
     overlay.classList.remove('loaded');
   };
+}
+
+/**
+ * Renders custom wallpapers grid preview within customizer.
+ */
+async function _renderCustomWallpapersList() {
+  const container = document.getElementById('wallpaper-preview-list');
+  if (!container) return;
+  
+  container.innerHTML = '';
+  const wallpapers = await getAllWallpapers();
+  
+  if (wallpapers.length === 0) {
+    container.innerHTML = '<p class="config-hint text-center w-full">No custom wallpapers added yet.</p>';
+    return;
+  }
+  
+  wallpapers.forEach((wp) => {
+    const item = document.createElement('div');
+    item.className = 'wallpaper-item-preview';
+    item.style.backgroundImage = `url('${wp.data}')`;
+    item.title = wp.name || 'Custom Wallpaper';
+    
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.className = 'wallpaper-item-delete';
+    delBtn.textContent = '×';
+    delBtn.onclick = async (e) => {
+      e.stopPropagation();
+      await deleteWallpaper(wp.id);
+      _renderCustomWallpapersList();
+      _applyLiveWallpaperPreview();
+    };
+    
+    item.appendChild(delBtn);
+    container.appendChild(item);
+  });
 }

@@ -194,10 +194,80 @@ function saveWallpaperBlur(val) { localStorage.setItem('wallpaperBlur', String(v
 function getStoredWallpaperBrightness() { return localStorage.getItem('wallpaperBrightness') || '100'; }
 function saveWallpaperBrightness(val) { localStorage.setItem('wallpaperBrightness', String(val)); }
 
+function getStoredWallpaperRotation() { return localStorage.getItem('wallpaperRotation') || 'random'; }
+function saveWallpaperRotation(val) { localStorage.setItem('wallpaperRotation', val); }
+
+/* --- IndexedDB Wallpaper Store --- */
+const DB_NAME = 'SenzaIWallpaperDB';
+const DB_VERSION = 1;
+const STORE_NAME = 'wallpapers';
+
+function openWallpaperDB() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+    request.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'id', autoIncrement: true });
+      }
+    };
+    request.onsuccess = (e) => resolve(e.target.result);
+    request.onerror = (e) => reject(e.target.error);
+  });
+}
+
+async function getAllWallpapers() {
+  try {
+    const db = await openWallpaperDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readonly');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB error:", e);
+    return [];
+  }
+}
+
+async function addWallpaper(type, data, name = '') {
+  try {
+    const db = await openWallpaperDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const record = { type, data, name, addedAt: Date.now() };
+      const request = store.add(record);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB error:", e);
+    return null;
+  }
+}
+
+async function deleteWallpaper(id) {
+  try {
+    const db = await openWallpaperDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(STORE_NAME, 'readwrite');
+      const store = transaction.objectStore(STORE_NAME);
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (e) {
+    console.error("IndexedDB error:", e);
+  }
+}
+
 /**
  * Applies wallpaper from user settings to the overlay layout element.
  */
-function applyWallpaper() {
+async function applyWallpaper() {
   const overlay = document.getElementById('wallpaper-overlay');
   if (!overlay) return;
 
@@ -218,6 +288,30 @@ function applyWallpaper() {
   let url = '';
   if (mode === 'custom') {
     url = getStoredWallpaperUrl();
+  } else if (mode === 'custom_list') {
+    const list = await getAllWallpapers();
+    if (list.length === 0) {
+      overlay.classList.remove('loaded');
+      overlay.style.backgroundImage = '';
+      return;
+    }
+    
+    const rotation = getStoredWallpaperRotation();
+    let idx = 0;
+    if (rotation === 'random') {
+      if (!window._sessionRandomSeed) {
+        window._sessionRandomSeed = Math.floor(Math.random() * 1000000);
+      }
+      idx = window._sessionRandomSeed % list.length;
+    } else if (rotation === 'daily') {
+      idx = Math.floor(Date.now() / (1000 * 60 * 60 * 24)) % list.length;
+    } else if (rotation === 'hourly') {
+      idx = Math.floor(Date.now() / (1000 * 60 * 60)) % list.length;
+    }
+    
+    if (list[idx]) {
+      url = list[idx].data;
+    }
   } else {
     const now = new Date();
     const YYYY = now.getFullYear();

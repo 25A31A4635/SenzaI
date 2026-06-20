@@ -403,6 +403,7 @@
             <select id="config-wallpaper-mode">
               <option value="none">None (Solid Color)</option>
               <option value="custom">Custom URL</option>
+              <option value="custom_list">Multi-Wallpaper / Local Upload</option>
               <option value="daily">Daily Curated</option>
               <option value="hourly">Hourly Curated</option>
               <option value="random">New Tab Random</option>
@@ -412,6 +413,31 @@
           <div id="wallpaper-url-container" class="config-group hidden">
             <label for="config-wallpaper-url" class="config-hint">Wallpaper URL</label>
             <input type="text" id="config-wallpaper-url" placeholder="https://images.unsplash.com/..." spellcheck="false" />
+          </div>
+
+          <div id="wallpaper-list-container" class="config-group hidden">
+            <label class="config-hint">Manage Custom Wallpapers</label>
+            <div class="flex gap-sm m-b-sm">
+              <button type="button" class="btn-secondary flex-1" id="btn-upload-wallpaper">Upload Image</button>
+              <input type="file" id="input-upload-wallpaper" accept="image/*" class="hidden" />
+            </div>
+            
+            <div class="flex gap-sm m-b-sm">
+              <input type="text" id="input-wallpaper-url" placeholder="Paste image URL..." spellcheck="false" class="flex-1" />
+              <button type="button" class="btn-primary" id="btn-add-wallpaper-url">+</button>
+            </div>
+
+            <!-- Wallpapers Grid/List preview -->
+            <div id="wallpaper-preview-list" class="wallpaper-preview-list"></div>
+
+            <div class="m-t-md">
+              <label for="config-wallpaper-rotation" class="config-hint">Rotation Interval</label>
+              <select id="config-wallpaper-rotation">
+                <option value="random">New Tab (Random)</option>
+                <option value="daily">Daily</option>
+                <option value="hourly">Hourly</option>
+              </select>
+            </div>
           </div>
 
           <div>
