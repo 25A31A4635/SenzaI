@@ -588,6 +588,64 @@ body.navigating .content {
   cursor: pointer;
 }
 
+/* Beautiful custom range slider styling */
+.config-content input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: rgba(128, 128, 128, 0.15);
+  border: none !important;
+  border-radius: 3px;
+  padding: 0 !important;
+  cursor: pointer;
+  outline: none;
+  transition: background 0.2s ease;
+}
+
+.config-content input[type="range"]:focus {
+  background: rgba(128, 128, 128, 0.25);
+  border-color: transparent !important;
+}
+
+.config-content input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.config-content input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.config-content input[type="range"]::-webkit-slider-thumb:active {
+  transform: scale(1.1);
+}
+
+.config-content input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.config-content input[type="range"]::-moz-range-thumb:hover {
+  transform: scale(1.2);
+}
+
+.config-content input[type="range"]::-moz-range-thumb:active {
+  transform: scale(1.1);
+}
+
 .config-content select {
   appearance: none;
   min-height: 48px;
@@ -602,7 +660,7 @@ body.navigating .content {
   background-repeat: no-repeat;
 }
 
-.config-content input:focus, .config-content select:focus {
+.config-content input:focus, .config-content select:focus, .config-content textarea:focus {
   outline: none;
   border-color: var(--color-primary);
   background-color: rgba(128, 128, 128, 0.1);
@@ -615,31 +673,121 @@ body.navigating .content {
   margin-top: 32px;
 }
 
-button {
+/* Base Component Button Styles */
+button, .btn {
   padding: 12px 24px;
   border-radius: var(--radius-md);
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
   font-weight: 600;
   font-size: 14px;
-  transition: all 0.2s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
 }
 
-button:hover {
+button:hover, .btn:hover {
   transform: translateY(-1px);
-  filter: brightness(1.1);
+  filter: brightness(1.05);
 }
 
-.btn-save {
+button:active, .btn:active {
+  transform: translateY(0);
+}
+
+.btn-save, .btn-primary {
   background: var(--color-primary);
   color: white;
+  border: none;
 }
 
-.btn-cancel {
+.btn-cancel, .btn-secondary {
   background: transparent;
   border: 1px solid var(--card-border);
   color: var(--text-color);
 }
+
+.btn-cancel:hover, .btn-secondary:hover {
+  background: rgba(128, 128, 128, 0.05);
+  border-color: var(--card-border);
+}
+
+.btn-danger {
+  background: var(--color-error);
+  color: white;
+  border: none;
+}
+
+.btn-danger:hover {
+  background: var(--color-error);
+  filter: brightness(0.9);
+}
+
+.btn-outline-primary {
+  background: transparent;
+  border: 1px solid var(--color-primary);
+  color: var(--color-primary);
+}
+
+.btn-outline-primary:hover {
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+
+/* Modal sizes */
+.config-modal .config-content.modal-sm { max-width: 400px; }
+.config-modal .config-content.modal-md { max-width: 500px; }
+.config-modal .config-content.modal-lg { max-width: 700px; width: 100%; }
+.config-modal .config-content.modal-xl { max-width: 800px; width: 100%; }
+
+/* Form Config Layout System */
+.config-group {
+  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+}
+.config-group:last-child {
+  margin-bottom: 0;
+}
+.config-group-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.config-group-row:last-child {
+  margin-bottom: 0;
+}
+.config-group-row > * {
+  flex: 1;
+}
+
+/* Layout & Spacing Helpers */
+.flex { display: flex; }
+.flex-col { display: flex; flex-direction: column; }
+.flex-row { display: flex; flex-direction: row; }
+.flex-1 { flex: 1; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-center { align-items: center; }
+.w-full { width: 100%; }
+.m-b-xs { margin-bottom: 4px !important; }
+.m-b-sm { margin-bottom: 8px !important; }
+.m-b-md { margin-bottom: 12px !important; }
+.m-b-lg { margin-bottom: 16px !important; }
+.m-b-xl { margin-bottom: 24px !important; }
+.m-t-0 { margin-top: 0 !important; }
+.m-t-xs { margin-top: 4px !important; }
+.m-t-sm { margin-top: 6px !important; }
+.m-t-md { margin-top: 8px !important; }
+.m-t-lg { margin-top: 16px !important; }
+.m-t-xl { margin-top: 24px !important; }
+.m-l-auto { margin-left: auto !important; }
+.p-0 { padding: 0 !important; }
+.text-center { text-align: center !important; }
+.text-right { text-align: right !important; }
+.min-w-280 { min-width: 280px; }
+.min-h-400 { min-height: 400px; }
+.user-select-none { user-select: none; }
 
 
 
@@ -1220,10 +1368,13 @@ body.dragging-bar * {
 /* Custom CSS Toggle Switches */
 .config-checkbox-label {
   position: relative;
+  display: inline-flex;
+  align-items: center;
   padding-left: 54px !important;
   min-height: 24px;
   cursor: pointer;
   user-select: none;
+  font-size: 14px;
 }
 
 .config-checkbox-label input[type="checkbox"] {
@@ -1244,7 +1395,7 @@ body.dragging-bar * {
   transform: translateY(-50%);
   width: 40px;
   height: 22px;
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(128, 128, 128, 0.12);
   border: 1px solid var(--card-border);
   border-radius: 12px;
   transition: background 0.22s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.22s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1283,6 +1434,29 @@ body.dragging-bar * {
 
 .config-checkbox-label:hover::after {
   opacity: 1;
+}
+
+/* Help Modal Columns Layout */
+.help-columns {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.help-column {
+  flex: 1;
+  min-width: 280px;
+}
+
+.help-column h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+  font-size: 13px;
+  text-transform: uppercase;
+  color: var(--text-color);
+  opacity: 0.6;
+  letter-spacing: 0.05em;
+  font-weight: 600;
 }
 
 /* Help Guide Redesign Styling */
@@ -1422,6 +1596,22 @@ body.dragging-bar * {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+}
+
+/* Customizer range display and text helpers */
+.value-display {
+  font-family: var(--monospace-font-family);
+  font-size: 14px;
+  min-width: 40px;
+  text-align: right;
+  user-select: none;
+}
+
+.drag-helper-text {
+  color: var(--color-primary);
+  font-weight: 600;
+  margin-top: 8px;
+  font-size: 13px;
 }
 
 

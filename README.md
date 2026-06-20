@@ -35,6 +35,12 @@ SenzaI runs entirely in your browser, works offline, and respects your privacy.
    - **Chrome / Opera**: Go to `chrome://extensions`, enable **Developer mode**, click **Load unpacked**, and select this folder.
    - **Firefox**: Go to `about:debugging#/runtime/this-firefox`, click **Load Temporary Add-on**, and choose `manifest.json` from this folder.
 
+### Packaging Releases
+To generate browser-ready zip packages under `releases/` (e.g. `senzai-chrome.zip`, `senzai-firefox.zip`, `senzai-opera.zip`) for publication:
+```bash
+python3 package.py
+```
+
 ## Keybinds & Commands
 
 ### Dormant Mode (unfocused)
