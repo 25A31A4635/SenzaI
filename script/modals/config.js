@@ -11,8 +11,6 @@ function openConfig() {
   document.getElementById('config-key-new').value = getStoredKeyNewTab();
   
   document.getElementById('config-enable-hint').checked = getStoredEnableAutocompleteHint();
-  document.getElementById('config-enable-dropdown').checked = getStoredEnableSuggestionDropdown();
-  document.getElementById('config-enable-dropdown-nav').checked = getStoredEnableDropdownNavigation();
   document.getElementById('config-enable-status-line').checked = getStoredEnableStatusLine();
   document.getElementById('config-enable-calculator').checked = getStoredEnableInlineCalculator();
   document.getElementById('config-enable-autofocus').checked = getStoredEnableAutofocus();
@@ -43,8 +41,6 @@ function saveConfig() {
   const kn = document.getElementById('config-key-new').value.trim().toLowerCase();
   
   const eh = document.getElementById('config-enable-hint').checked;
-  const ed = document.getElementById('config-enable-dropdown').checked;
-  const edn = document.getElementById('config-enable-dropdown-nav').checked;
   const esl = document.getElementById('config-enable-status-line').checked;
   const ec = document.getElementById('config-enable-calculator').checked;
   const eaf = document.getElementById('config-enable-autofocus').checked;
@@ -61,8 +57,6 @@ function saveConfig() {
   if (kc) saveKeyCloseTab(kc);
   if (kn) saveKeyNewTab(kn);
   saveEnableAutocompleteHint(eh);
-  saveEnableSuggestionDropdown(ed);
-  saveEnableDropdownNavigation(edn);
   saveEnableStatusLine(esl);
   saveEnableInlineCalculator(ec);
   saveEnableAutofocus(eaf);

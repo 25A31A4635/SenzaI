@@ -55,21 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
   on('btn-clear-history',      () => clearHistory());
   on('btn-close-history',      () => closeHistoryModal());
 
-  // --- Live Results Click Interception ---
-  const liveResults = document.getElementById('live-results');
-  if (liveResults) {
-    liveResults.addEventListener('click', (e) => {
-      const item = e.target.closest('.live-result-item');
-      if (item) {
-        e.preventDefault();
-        const href = item.getAttribute('href');
-        if (typeof navigate === 'function') {
-          navigate(href);
-        } else {
-          window.location.href = href;
-        }
-      }
-    });
-  }
+
 
 });

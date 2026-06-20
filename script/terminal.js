@@ -42,7 +42,6 @@ function initializeTerminal() {
   }
 }
 
-let activeResultIdx = -1;
 let originalTypedValue = "";
 let terminalHistory = [];
 let terminalHistoryIdx = -1;
@@ -54,7 +53,6 @@ function handleInput(input) {
   input.addEventListener("input", () => {
     // Only process if no modal is obstructing the view
     if (document.querySelector('.config-modal.active, #sp-modal-overlay')) return;
-    activeResultIdx = -1;
     originalTypedValue = input.value;
     updateSyntaxHighlight(input.value);
   });
@@ -148,10 +146,6 @@ function updateSyntaxHighlight(rawValue) {
     updateFocusIndicator();
   }
 
-  if (typeof renderLiveResults === 'function') {
-    renderLiveResults(rawValue);
-  }
-
   if (!value) {
     hintEl.textContent = '';
     input.removeAttribute('data-suggestion');
@@ -232,11 +226,6 @@ function handleKeyboardEvents(input) {
     const anyModal = document.querySelector('.config-modal.active, #sp-modal-overlay');
     if (anyModal) return;
 
-    const enableNav = (typeof getStoredEnableDropdownNavigation === 'function') ? getStoredEnableDropdownNavigation() : true;
-    const resultsContainer = document.getElementById('live-results');
-    const items = resultsContainer ? resultsContainer.querySelectorAll('.live-result-item') : [];
-    const hasResults = resultsContainer && resultsContainer.classList.contains('visible') && items.length > 0;
-
     // --- Autocomplete Completion (Tab or Right Arrow) ---
     if ((e.key === "Tab" || e.key === "ArrowRight") && input.hasAttribute('data-suggestion')) {
       e.preventDefault();
@@ -245,80 +234,27 @@ function handleKeyboardEvents(input) {
       return;
     }
 
-    // --- Arrow Keys: Dropdown Navigation vs. History Navigation ---
+    // --- Arrow Keys: History Navigation ---
     if (e.key === "ArrowDown") {
-      if (hasResults && enableNav) {
-        e.preventDefault();
-        
-        // Remove highlight from previous item
-        if (activeResultIdx >= 0 && activeResultIdx < items.length) {
-          items[activeResultIdx].classList.remove('selected');
-        }
-        
-        // Move selection index forward (downwards)
-        activeResultIdx++;
-        if (activeResultIdx >= items.length) {
-          activeResultIdx = -1;
-          input.value = originalTypedValue;
-          updateSyntaxHighlight(originalTypedValue);
-        } else {
-          items[activeResultIdx].classList.add('selected');
-          items[activeResultIdx].scrollIntoView({ block: 'nearest' });
-          
-          // Clear ghost hint
-          const hintEl = document.getElementById('command-hint');
-          if (hintEl) hintEl.textContent = '';
-        }
-      } else {
-        // Navigate history forward (towards newer items / clear)
-        e.preventDefault();
-        if (terminalHistoryIdx > 0) {
-          terminalHistoryIdx--;
-          input.value = terminalHistory[terminalHistoryIdx];
-          updateSyntaxHighlight(input.value);
-        } else if (terminalHistoryIdx === 0) {
-          terminalHistoryIdx = -1;
-          input.value = originalTypedValue || "";
-          updateSyntaxHighlight(input.value);
-        }
+      e.preventDefault();
+      if (terminalHistoryIdx > 0) {
+        terminalHistoryIdx--;
+        input.value = terminalHistory[terminalHistoryIdx];
+        updateSyntaxHighlight(input.value);
+      } else if (terminalHistoryIdx === 0) {
+        terminalHistoryIdx = -1;
+        input.value = originalTypedValue || "";
+        updateSyntaxHighlight(input.value);
       }
       return;
     }
 
     if (e.key === "ArrowUp") {
-      if (hasResults && enableNav) {
-        e.preventDefault();
-        
-        // Remove highlight from previous item
-        if (activeResultIdx >= 0 && activeResultIdx < items.length) {
-          items[activeResultIdx].classList.remove('selected');
-        }
-        
-        // Move selection index backward (upwards)
-        activeResultIdx--;
-        if (activeResultIdx < -1) {
-          activeResultIdx = items.length - 1;
-        }
-        
-        if (activeResultIdx === -1) {
-          input.value = originalTypedValue;
-          updateSyntaxHighlight(originalTypedValue);
-        } else {
-          items[activeResultIdx].classList.add('selected');
-          items[activeResultIdx].scrollIntoView({ block: 'nearest' });
-          
-          // Clear ghost hint
-          const hintEl = document.getElementById('command-hint');
-          if (hintEl) hintEl.textContent = '';
-        }
-      } else {
-        // Navigate history backward (towards older items)
-        e.preventDefault();
-        if (terminalHistoryIdx < terminalHistory.length - 1) {
-          terminalHistoryIdx++;
-          input.value = terminalHistory[terminalHistoryIdx];
-          updateSyntaxHighlight(input.value);
-        }
+      e.preventDefault();
+      if (terminalHistoryIdx < terminalHistory.length - 1) {
+        terminalHistoryIdx++;
+        input.value = terminalHistory[terminalHistoryIdx];
+        updateSyntaxHighlight(input.value);
       }
       return;
     }
@@ -328,18 +264,6 @@ function handleKeyboardEvents(input) {
       e.preventDefault();
       e.stopPropagation();
       
-      // If we have a highlighted dropdown suggestion, navigate to it directly
-      if (hasResults && enableNav && activeResultIdx >= 0 && activeResultIdx < items.length) {
-        const targetHref = items[activeResultIdx].getAttribute('href');
-        pushHistory(originalTypedValue);
-        if (typeof navigate === 'function') {
-          navigate(targetHref);
-        } else {
-          window.location.href = targetHref;
-        }
-        return;
-      }
-
       const val = input.value.trim();
       if (!val) return;
 

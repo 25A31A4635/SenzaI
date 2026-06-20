@@ -90,13 +90,10 @@ function openCustomizeModal() {
     barInvisibleInput.checked = barInvisible;
     barInvisibleInput.onchange = () => {
       const bar = document.querySelector('.terminal-section');
-      const results = document.getElementById('live-results');
       if (barInvisibleInput.checked) {
         if (bar) bar.classList.add('bar-invisible');
-        if (results) results.classList.add('bar-invisible');
       } else {
         if (bar) bar.classList.remove('bar-invisible');
-        if (results) results.classList.remove('bar-invisible');
       }
     };
   }
@@ -312,14 +309,9 @@ function applyBarLayout() {
 
   // Toggle invisible bar class
   const bar = document.querySelector('.terminal-section');
-  const results = document.getElementById('live-results');
   if (bar) {
     if (invisible) bar.classList.add('bar-invisible');
     else bar.classList.remove('bar-invisible');
-  }
-  if (results) {
-    if (invisible) results.classList.add('bar-invisible');
-    else results.classList.remove('bar-invisible');
   }
 
   // 2. Apply position classes and inline styles to .content container
