@@ -313,12 +313,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (el && fn) el.addEventListener('click', (e) => { if (e.target === el) fn(); });
   });
 
-  // Handle auto-focus option on load
-  if (typeof getStoredEnableAutofocus === 'function' && getStoredEnableAutofocus()) {
-    setTimeout(() => {
-      if (typeof window.activateTerminal === 'function') {
-        window.activateTerminal();
-      }
-    }, 60);
-  }
+  // Steal focus from the browser Omnibox to the webpage body on load.
+  // If Autofocus is enabled, we keep the input focused. If not, we immediately
+  // blur it to place the focus on the page body so that Space/Enter can wake it.
+  setTimeout(() => {
+    if (typeof window.activateTerminal === 'function') {
+      window.activateTerminal();
+    }
+    const autofocus = (typeof getStoredEnableAutofocus === 'function') ? getStoredEnableAutofocus() : false;
+    if (!autofocus && typeof window.setTerminalDormant === 'function') {
+      window.setTerminalDormant();
+    }
+  }, 120);
 });
